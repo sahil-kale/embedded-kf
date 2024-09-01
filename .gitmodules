@@ -1,0 +1,3 @@
+[submodule "libs/kalman-matrix-utils"]
+	path = libs/kalman-matrix-utils
+	url = git@github.com:sahil-kale/kalman-matrix-utils.git
