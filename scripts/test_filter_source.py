@@ -3,8 +3,8 @@ import argparse
 
 TESTS_EXE_NAME = "kalman_tests"
 
-def main(debug):
 
+def main(debug):
     # chdir to "application"
     os.chdir("filter")
     os.chdir("test")
