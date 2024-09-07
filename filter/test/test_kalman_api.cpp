@@ -5,26 +5,35 @@ extern "C" {
 #include "matrix.h"
 }
 
+static matrix_data_t X_init_data[2] = {3, 4};
 static matrix_data_t F_data[4] = {1, 0.001, 0, 1};
-static matrix_data_t P_data[4] = {1, 0, 0, 1};
+static matrix_data_t P_init_data[4] = {1, 0, 0, 1};
 static matrix_data_t Q_data[4] = {1, 0, 0, 1};
 
 static matrix_data_t R_data[1] = {1};
 static matrix_data_t H_data[2] = {1, 0};
 
+static matrix_t X_init = {2, 1, X_init_data};
 static matrix_t F = {2, 2, F_data};
-static matrix_t P_init = {2, 2, P_data};
+static matrix_t P_init = {2, 2, P_init_data};
 static matrix_t Q = {2, 2, Q_data};
 static matrix_t R = {1, 1, R_data};
 static matrix_t H = {1, 2, H_data};
 
+static matrix_data_t X_storage[2] = {0, 0};
+static matrix_data_t P_storage[4] = {1, 0, 0, 1};
+
 const kf_config_S default_simple_config = {
+    .X_init = &X_init,
     .F = &F,
     .B = NULL,
     .Q = &Q,
     .P_init = &P_init,
     .H = &H,
     .R = &R,
+
+    .X_matrix_storage = {2, X_storage},
+    .P_matrix_storage = {4, P_storage},
 };
 
 TEST_GROUP(kalman_api_test){void setup(){} void teardown(){}};
@@ -59,6 +68,17 @@ TEST(kalman_api_test, simple_kalman_init) {
     CHECK_EQUAL(1, kf_data.num_measurements);
 }
 
+// Test that the kalman filter initialization fails when the X_init matrix is NULL
+TEST(kalman_api_test, kalman_init_null_X_init) {
+    kf_data_S kf_data;
+    kf_config_S config_with_null_X_init = default_simple_config;
+    config_with_null_X_init.X_init = NULL;
+
+    kf_error_E error = kf_init(&kf_data, &config_with_null_X_init);
+    CHECK_EQUAL(KF_ERROR_INVALID_POINTER, error);
+    CHECK_EQUAL(false, kf_data.initialized);
+}
+
 // Test that the F matrix is square
 TEST(kalman_api_test, invalid_F_matrix_dims) {
     kf_data_S kf_data;
@@ -77,13 +97,23 @@ TEST(kalman_api_test, invalid_F_matrix_dims) {
     error = kf_init(&kf_data, &config_with_null_F);
     CHECK_EQUAL(KF_ERROR_INVALID_POINTER, error);
     CHECK_EQUAL(false, kf_data.initialized);
+
+    // test 3x3 F matrix, should fail with invalid dimensions
+    kf_config_S config_with_3x3_F = default_simple_config;
+    static matrix_data_t F_3x3_data[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    static matrix_t F_3x3 = {3, 3, F_3x3_data};
+    config_with_3x3_F.F = &F_3x3;
+
+    error = kf_init(&kf_data, &config_with_3x3_F);
+    CHECK_EQUAL(KF_ERROR_INVALID_DIMENSIONS, error);
+    CHECK_EQUAL(false, kf_data.initialized);
 }
 
 // Test invalid matrix dimensions
 TEST(kalman_api_test, invalid_P_matrix_dims) {
     kf_data_S kf_data;
     kf_config_S config_with_invalid_P_dims = default_simple_config;
-    static matrix_t P_init_bad = {2, 1, P_data};
+    static matrix_t P_init_bad = {2, 1, P_init_data};
     config_with_invalid_P_dims.P_init = &P_init_bad;
 
     kf_error_E error = kf_init(&kf_data, &config_with_invalid_P_dims);
@@ -179,4 +209,70 @@ TEST(kalman_api_test, invalid_B_matrix_dims) {
     CHECK_EQUAL(KF_ERROR_NONE, error);
     CHECK_EQUAL(true, kf_data.initialized);
     CHECK_EQUAL(3, kf_data.num_controls);
+}
+
+// Test storage space for X
+TEST(kalman_api_test, storage_space_X) {
+    kf_data_S kf_data;
+    kf_config_S config_with_storage = default_simple_config;
+
+    kf_error_E error = kf_init(&kf_data, &config_with_storage);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+    CHECK_EQUAL(true, kf_data.initialized);
+    CHECK_EQUAL(config_with_storage.X_matrix_storage.data, kf_data.X.data);
+
+    // Check that the X matrix data is identical to the X init data
+    for (size_t i = 0; i < X_init.rows; i++) {
+        CHECK_EQUAL(X_init_data[i], matrix_get(&kf_data.X, i, 0));
+    }
+
+    // Test invalid pointer for X matrix storage
+    kf_config_S config_with_null_X_storage = default_simple_config;
+    config_with_null_X_storage.X_matrix_storage.data = NULL;
+
+    error = kf_init(&kf_data, &config_with_null_X_storage);
+    CHECK_EQUAL(KF_ERROR_INVALID_POINTER, error);
+    CHECK_EQUAL(false, kf_data.initialized);
+
+    // Test invalid size for X matrix storage
+    kf_config_S config_with_invalid_X_storage = default_simple_config;
+    config_with_invalid_X_storage.X_matrix_storage.size = 1;
+
+    error = kf_init(&kf_data, &config_with_invalid_X_storage);
+    CHECK_EQUAL(KF_ERROR_STORAGE_TOO_SMALL, error);
+    CHECK_EQUAL(false, kf_data.initialized);
+}
+
+// Test storage space for P
+TEST(kalman_api_test, storage_space_P) {
+    kf_data_S kf_data;
+    kf_config_S config_with_storage = default_simple_config;
+
+    kf_error_E error = kf_init(&kf_data, &config_with_storage);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+    CHECK_EQUAL(true, kf_data.initialized);
+    CHECK_EQUAL(config_with_storage.P_matrix_storage.data, kf_data.P.data);
+
+    // Check that the P matrix data is identical to the P init data
+    for (size_t i = 0; i < P_init.rows; i++) {
+        for (size_t j = 0; j < P_init.cols; j++) {
+            CHECK_EQUAL(P_init_data[i * P_init.cols + j], matrix_get(&kf_data.P, i, j));
+        }
+    }
+
+    // Test invalid pointer for P matrix storage
+    kf_config_S config_with_null_P_storage = default_simple_config;
+    config_with_null_P_storage.P_matrix_storage.data = NULL;
+
+    error = kf_init(&kf_data, &config_with_null_P_storage);
+    CHECK_EQUAL(KF_ERROR_INVALID_POINTER, error);
+    CHECK_EQUAL(false, kf_data.initialized);
+
+    // Test invalid size for P matrix storage
+    kf_config_S config_with_invalid_P_storage = default_simple_config;
+    config_with_invalid_P_storage.P_matrix_storage.size = 1;
+
+    error = kf_init(&kf_data, &config_with_invalid_P_storage);
+    CHECK_EQUAL(KF_ERROR_STORAGE_TOO_SMALL, error);
+    CHECK_EQUAL(false, kf_data.initialized);
 }

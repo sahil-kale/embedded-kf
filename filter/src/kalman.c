@@ -17,22 +17,24 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     // Make sure all the pointers in the config are not NULL
     bool invalid_matrix_pointer = false;
     if (config != NULL) {
-        invalid_matrix_pointer =
-            (config->F == NULL) || (config->P_init == NULL) || (config->Q == NULL) || (config->H == NULL) || (config->R == NULL);
+        invalid_matrix_pointer = (config->X_init == NULL) || (config->F == NULL) || (config->P_init == NULL) ||
+                                 (config->Q == NULL) || (config->H == NULL) || (config->R == NULL);
     }
 
     if ((ret == KF_ERROR_NONE) && invalid_matrix_pointer) {
         ret = KF_ERROR_INVALID_POINTER;
     }
 
+    if (ret == KF_ERROR_NONE) {
+        kf_data->num_states = config->X_init->rows;
+    }
+
     // F should be square
     if (ret == KF_ERROR_NONE) {
         const matrix_t* F = config->F;
-        if (F->rows != F->cols) {
+        if ((F->rows != F->cols) || (F->rows != kf_data->num_states)) {
             ret = KF_ERROR_INVALID_DIMENSIONS;
         }
-
-        kf_data->num_states = F->rows;
     }
 
     // P_init should be square and have the same dimensions as F
@@ -79,10 +81,40 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
         kf_data->num_controls = config->B->cols;
     }
 
-    // TODO: Give "Storage spaces" to the data via the config struct (just give the pointers to the data)
-    // this will allow the user to allocate the memory for the matrices and for us to do the nitty gritty
+    if (ret == KF_ERROR_NONE) {
+        if (config->X_matrix_storage.data == NULL) {
+            ret = KF_ERROR_INVALID_POINTER;
+        } else {
+            if (config->X_matrix_storage.size < kf_data->num_states) {
+                ret = KF_ERROR_STORAGE_TOO_SMALL;
+            }
+        }
+    }
 
-    // init X, P,
+    if (ret == KF_ERROR_NONE) {
+        kf_data->X.rows = kf_data->num_states;
+        kf_data->X.cols = 1;
+        kf_data->X.data = config->X_matrix_storage.data;  // init temporary matrices
+
+        memcpy(kf_data->X.data, config->X_init->data, kf_data->num_states * sizeof(matrix_data_t));
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        if (config->P_matrix_storage.data == NULL) {
+            ret = KF_ERROR_INVALID_POINTER;
+        } else {
+            if (config->P_matrix_storage.size < kf_data->num_states * kf_data->num_states) {
+                ret = KF_ERROR_STORAGE_TOO_SMALL;
+            }
+        }
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        kf_data->P.rows = kf_data->num_states;
+        kf_data->P.cols = kf_data->num_states;
+        kf_data->P.data = config->P_matrix_storage.data;
+        memcpy(kf_data->P.data, config->P_init->data, kf_data->num_states * kf_data->num_states * sizeof(matrix_data_t));
+    }
 
     // init temporary matrices
 
