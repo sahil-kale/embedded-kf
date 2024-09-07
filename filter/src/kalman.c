@@ -2,6 +2,22 @@
 
 #include <string.h>
 
+static bool is_matrix_square_and_matches_states(const matrix_t* matrix, size_t num_states);
+static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, size_t required_size);
+
+static bool is_matrix_square_and_matches_states(const matrix_t* matrix, size_t num_states) {
+    return (matrix->rows == matrix->cols) && (matrix->rows == num_states);
+}
+
+static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, size_t required_size) {
+    if (storage->data == NULL) {
+        return KF_ERROR_INVALID_POINTER;
+    } else if (storage->size < required_size) {
+        return KF_ERROR_STORAGE_TOO_SMALL;
+    }
+    return KF_ERROR_NONE;
+}
+
 kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     kf_error_E ret = KF_ERROR_NONE;
 
@@ -32,23 +48,21 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     // F should be square
     if (ret == KF_ERROR_NONE) {
         const matrix_t* F = config->F;
-        if ((F->rows != F->cols) || (F->rows != kf_data->num_states)) {
+        if (is_matrix_square_and_matches_states(F, kf_data->num_states) == false) {
             ret = KF_ERROR_INVALID_DIMENSIONS;
         }
     }
 
-    // P_init should be square and have the same dimensions as F
     if (ret == KF_ERROR_NONE) {
         const matrix_t* P_init = config->P_init;
-        if ((P_init->rows != P_init->cols) || (P_init->rows != kf_data->num_states)) {
+        if (is_matrix_square_and_matches_states(P_init, kf_data->num_states) == false) {
             ret = KF_ERROR_INVALID_DIMENSIONS;
         }
     }
 
-    // Q should be square and have the same dimensions as F
     if (ret == KF_ERROR_NONE) {
         const matrix_t* Q = config->Q;
-        if ((Q->rows != Q->cols) || (Q->rows != kf_data->num_states)) {
+        if (is_matrix_square_and_matches_states(Q, kf_data->num_states) == false) {
             ret = KF_ERROR_INVALID_DIMENSIONS;
         }
     }
@@ -66,7 +80,7 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     // R should be square and should be measurement * measurement
     if (ret == KF_ERROR_NONE) {
         const matrix_t* R = config->R;
-        if ((R->rows != R->cols) || (R->rows != kf_data->num_measurements)) {
+        if (is_matrix_square_and_matches_states(R, kf_data->num_measurements) == false) {
             ret = KF_ERROR_INVALID_DIMENSIONS;
         }
     }
@@ -82,13 +96,7 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     if (ret == KF_ERROR_NONE) {
-        if (config->X_matrix_storage.data == NULL) {
-            ret = KF_ERROR_INVALID_POINTER;
-        } else {
-            if (config->X_matrix_storage.size < kf_data->num_states) {
-                ret = KF_ERROR_STORAGE_TOO_SMALL;
-            }
-        }
+        ret = validate_matrix_storage(&config->X_matrix_storage, kf_data->num_states);
     }
 
     if (ret == KF_ERROR_NONE) {
@@ -100,13 +108,7 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     if (ret == KF_ERROR_NONE) {
-        if (config->P_matrix_storage.data == NULL) {
-            ret = KF_ERROR_INVALID_POINTER;
-        } else {
-            if (config->P_matrix_storage.size < kf_data->num_states * kf_data->num_states) {
-                ret = KF_ERROR_STORAGE_TOO_SMALL;
-            }
-        }
+        ret = validate_matrix_storage(&config->P_matrix_storage, kf_data->num_states * kf_data->num_states);
     }
 
     if (ret == KF_ERROR_NONE) {
