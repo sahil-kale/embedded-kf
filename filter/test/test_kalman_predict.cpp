@@ -27,6 +27,9 @@ static matrix_data_t P_storage[4] = {1, 0, 0, 1};
 
 static matrix_data_t temp_x_hat_storage[2] = {0, 0};
 
+static matrix_data_t temp_S_storage[1] = {0};
+static matrix_data_t temp_K_storage[2] = {0, 0};
+
 const kf_config_S default_simple_config = {
     .X_init = &X_init,
     .F = &F,
@@ -41,6 +44,9 @@ const kf_config_S default_simple_config = {
 
     .temp_x_hat_storage = {2, temp_x_hat_storage},
     .temp_B_storage = {0, NULL},
+
+    .temp_S_storage = {1, temp_S_storage},
+    .temp_K_storage = {2, temp_K_storage},
 };
 
 TEST_GROUP(kalman_predict_test){void setup(){} void teardown(){}};
@@ -124,4 +130,31 @@ TEST(kalman_predict_test, kalman_predict_simple_with_control_input) {
 
     verify_matrix_equal(&x_hat, &kf_data.X);
     verify_matrix_equal(&P, &kf_data.P);
+}
+
+TEST(kalman_predict_test, invalid_control_input_dims) {
+    kf_data_S kf_data;
+    kf_config_S config_with_B = default_simple_config;
+    static matrix_data_t B_data[4] = {1, 1, 1, 1};
+    static matrix_t B = {2, 2, B_data};
+    config_with_B.B = &B;
+    static matrix_data_t temp_B_storage[4] = {0, 0, 0, 0};
+    config_with_B.temp_B_storage = {4, temp_B_storage};
+    kf_error_E error = kf_init(&kf_data, &config_with_B);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+
+    matrix_data_t u_data[3] = {1, 1, 1};
+    matrix_t u = {3, 1, u_data};
+
+    error = kf_predict(&kf_data, &u);
+    CHECK_EQUAL(KF_ERROR_INVALID_DIMENSIONS, error);
+
+    // Give a correct U matrix, but make B matrix NULL. Expect an error because B matrix is NULL
+    kf_config_S config_with_null_B = default_simple_config;
+    config_with_null_B.B = NULL;
+    error = kf_init(&kf_data, &config_with_null_B);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+
+    error = kf_predict(&kf_data, &u);
+    CHECK_EQUAL(KF_ERROR_CONTROL_MATRIX_NOT_ENABLED, error);
 }

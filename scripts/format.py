@@ -1,42 +1,50 @@
 import os
+import subprocess
 
 EXCLUDE_DIRS = [".vscode", "build", "libs"]
+EMBEDDED_EXTENSIONS = (".c", ".h", ".cpp", ".hpp")
+PYTHON_EXTENSION = ".py"
+
+
+def get_files_with_extensions(extensions):
+    """
+    Get a list of all files with the specified extensions, excluding certain directories.
+    """
+    files = []
+    for root, dirs, filenames in os.walk("."):
+        # Modify 'dirs' in-place to exclude unwanted directories by name
+        dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+        files.extend(
+            os.path.join(root, filename)
+            for filename in filenames
+            if filename.endswith(extensions)
+        )
+    return files
+
+
+def format_files(command, files):
+    """
+    Run the specified format command on a list of files.
+    """
+    if files:
+        subprocess.run([command, *files])
 
 
 def embedded_fmt():
-    # get all .c, .h, .cpp, and .hpp files in the project. Ignore the excluded directories and recursively ignore or search for files
-    files = []
-    for root, dirs, filenames in os.walk("."):
-        dirs[:] = [
-            d
-            for d in dirs
-            if os.path.join(root, d) not in [os.path.join(".", e) for e in EXCLUDE_DIRS]
-        ]
-        for filename in filenames:
-            if filename.endswith((".c", ".h", ".cpp", ".hpp")):
-                files.append(os.path.join(root, filename))
-
-    # format all the files
-    for file in files:
-        os.system(f"clang-format -i {file}")
+    """
+    Format C/C++ files using clang-format.
+    """
+    embedded_files = get_files_with_extensions(EMBEDDED_EXTENSIONS)
+    for file in embedded_files:
+        subprocess.run(["clang-format", "-i", file])
 
 
 def python_fmt():
-    # get all .py files in the project. Ignore the excluded directories and recursively ignore or search for files
-    files = []
-    for root, dirs, filenames in os.walk("."):
-        dirs[:] = [
-            d
-            for d in dirs
-            if os.path.join(root, d) not in [os.path.join(".", e) for e in EXCLUDE_DIRS]
-        ]
-        for filename in filenames:
-            if filename.endswith(".py"):
-                files.append(os.path.join(root, filename))
-
-    # format all the files
-    file_arg = " ".join(files)
-    os.system(f"black {file_arg}")
+    """
+    Format Python files using black.
+    """
+    python_files = get_files_with_extensions((PYTHON_EXTENSION,))
+    format_files("black", python_files)
 
 
 if __name__ == "__main__":

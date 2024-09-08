@@ -11,6 +11,7 @@ typedef enum {
     KF_ERROR_INVALID_DIMENSIONS,
     KF_ERROR_STORAGE_TOO_SMALL,
     KF_ERROR_NOT_INITIALIZED,
+    KF_ERROR_CONTROL_MATRIX_NOT_ENABLED,
     KF_ERROR_COUNT
 } kf_error_E;
 
@@ -35,6 +36,9 @@ typedef struct {
 
     kf_matrix_storage_S temp_x_hat_storage;  // min size is num_states * 1
     kf_matrix_storage_S temp_B_storage;      // min size is num_states * num_controls
+
+    kf_matrix_storage_S temp_S_storage;  // min size is num_measurements * num_measurements
+    kf_matrix_storage_S temp_K_storage;  // min size is num_states * num_measurements
 } kf_config_S;
 
 typedef struct {
@@ -44,6 +48,9 @@ typedef struct {
 
     matrix_t X;
     matrix_t P;
+
+    matrix_t S_temp;
+    matrix_t K_temp;
 
     size_t num_states;
     size_t num_measurements;
@@ -75,5 +82,18 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config);
  * not check null pointers or incorrectly configured matrices to avoid high runtime complexity and computational overhead.
  */
 kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u);
+
+/**
+ * @brief Update the Kalman filter with a new measurement
+ * @param kf_data The Kalman filter data
+ * @param z The measurement vector
+ * @param measurement_validity Array of boolean values indicating the validity of each measurement. Can leave NULL if all
+ * measurements are valid. Assumed to be of size num_measurements (rows in Z matrix)
+ * @param num_measurements The number of measurements in the measurement vector - set to 0 if no measurements are available
+ *
+ * @return kf_error_E Error code indicating the success of the update
+ */
+kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bool* const measurement_validity,
+                     const size_t num_measurements);
 
 #endif

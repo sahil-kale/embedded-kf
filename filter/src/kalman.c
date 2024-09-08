@@ -131,6 +131,20 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->temp_S_storage, kf_data->num_measurements * kf_data->num_measurements);
+        kf_data->S_temp.rows = kf_data->num_measurements;
+        kf_data->S_temp.cols = kf_data->num_measurements;
+        kf_data->S_temp.data = config->temp_S_storage.data;
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->temp_K_storage, kf_data->num_states * kf_data->num_measurements);
+        kf_data->K_temp.rows = kf_data->num_states;
+        kf_data->K_temp.cols = kf_data->num_measurements;
+        kf_data->K_temp.data = config->temp_K_storage.data;
+    }
+
+    if (ret == KF_ERROR_NONE) {
         kf_data->initialized = true;
     }
 
@@ -141,19 +155,36 @@ kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u) {
     (void)u;
     kf_error_E ret = KF_ERROR_NONE;
 
+    bool control_matrix_enabled = false;
+
     if (kf_data == NULL) {
         ret = KF_ERROR_INVALID_POINTER;
     } else if (kf_data->initialized == false) {
         ret = KF_ERROR_NOT_INITIALIZED;
     } else {
+        control_matrix_enabled = (kf_data->num_controls > 0);
         ret = KF_ERROR_NONE;
+    }
+
+    if ((control_matrix_enabled == false) && (u != NULL)) {
+        ret = KF_ERROR_CONTROL_MATRIX_NOT_ENABLED;
+    }
+
+    if ((ret == KF_ERROR_NONE) && control_matrix_enabled) {
+        if (u == NULL) {
+            ret = KF_ERROR_INVALID_POINTER;
+        } else if ((u->rows != kf_data->num_controls) || (u->cols != 1)) {
+            ret = KF_ERROR_INVALID_DIMENSIONS;
+        } else {
+            ret = KF_ERROR_NONE;
+        }
     }
 
     if (ret == KF_ERROR_NONE) {
         // Calculate the next x hat, x(k|k-1) = F*x(k-1) + B*u
         matrix_mult(kf_data->config->F, &kf_data->X, &kf_data->X, kf_data->config->temp_x_hat_storage.data);
 
-        if (kf_data->num_controls > 0) {
+        if (control_matrix_enabled) {
             matrix_t Bu = {kf_data->num_states, 1, kf_data->config->temp_B_storage.data};
             matrix_mult(kf_data->config->B, u, &Bu, kf_data->config->temp_x_hat_storage.data);
             matrix_add_inplace(&kf_data->X, &Bu);
@@ -163,6 +194,24 @@ kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u) {
         matrix_mult(kf_data->config->F, &kf_data->P, &kf_data->P, kf_data->config->temp_x_hat_storage.data);
         matrix_mult_transb(&kf_data->P, kf_data->config->F, &kf_data->P);
         matrix_add_inplace(&kf_data->P, kf_data->config->Q);
+    }
+
+    return ret;
+}
+
+kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bool* const measurement_validity,
+                     const size_t num_measurements) {
+    (void)z;
+    (void)measurement_validity;
+    (void)num_measurements;
+    kf_error_E ret = KF_ERROR_NONE;
+
+    if (kf_data == NULL) {
+        ret = KF_ERROR_INVALID_POINTER;
+    } else if (kf_data->initialized == false) {
+        ret = KF_ERROR_NOT_INITIALIZED;
+    } else {
+        ret = KF_ERROR_NONE;
     }
 
     return ret;
