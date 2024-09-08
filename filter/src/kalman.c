@@ -10,12 +10,15 @@ static bool is_matrix_square_and_matches_states(const matrix_t* matrix, size_t n
 }
 
 static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, size_t required_size) {
+    kf_error_E ret = KF_ERROR_NONE;
     if (storage->data == NULL) {
-        return KF_ERROR_INVALID_POINTER;
+        ret = KF_ERROR_INVALID_POINTER;
     } else if (storage->size < required_size) {
-        return KF_ERROR_STORAGE_TOO_SMALL;
+        ret = KF_ERROR_STORAGE_TOO_SMALL;
+    } else {
+        ret = KF_ERROR_NONE;
     }
-    return KF_ERROR_NONE;
+    return ret;
 }
 
 kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
@@ -119,9 +122,47 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     // init temporary matrices
+    if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->temp_x_hat_storage, kf_data->num_states);
+    }
+
+    if ((ret == KF_ERROR_NONE) && (kf_data->num_controls > 0)) {
+        ret = validate_matrix_storage(&config->temp_B_storage, kf_data->num_states * kf_data->num_controls);
+    }
 
     if (ret == KF_ERROR_NONE) {
         kf_data->initialized = true;
+    }
+
+    return ret;
+}
+
+kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u) {
+    (void)u;
+    kf_error_E ret = KF_ERROR_NONE;
+
+    if (kf_data == NULL) {
+        ret = KF_ERROR_INVALID_POINTER;
+    } else if (kf_data->initialized == false) {
+        ret = KF_ERROR_NOT_INITIALIZED;
+    } else {
+        ret = KF_ERROR_NONE;
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        // Calculate the next x hat, x(k|k-1) = F*x(k-1) + B*u
+        matrix_mult(kf_data->config->F, &kf_data->X, &kf_data->X, kf_data->config->temp_x_hat_storage.data);
+
+        if (kf_data->num_controls > 0) {
+            matrix_t Bu = {kf_data->num_states, 1, kf_data->config->temp_B_storage.data};
+            matrix_mult(kf_data->config->B, u, &Bu, kf_data->config->temp_x_hat_storage.data);
+            matrix_add_inplace(&kf_data->X, &Bu);
+        }
+
+        // Calculate the next P, P(k|k-1) = F*P(k-1)*F' + Q
+        matrix_mult(kf_data->config->F, &kf_data->P, &kf_data->P, kf_data->config->temp_x_hat_storage.data);
+        matrix_mult_transb(&kf_data->P, kf_data->config->F, &kf_data->P);
+        matrix_add_inplace(&kf_data->P, kf_data->config->Q);
     }
 
     return ret;
