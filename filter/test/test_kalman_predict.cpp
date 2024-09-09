@@ -33,6 +33,12 @@ static matrix_data_t K_matrix_storage[2] = {0, 0};
 static matrix_data_t temp_measurement_storage_data[1] = {0};
 static matrix_data_t Y_matrix_storage[1] = {0};
 
+static matrix_data_t P_Ht_storage[2] = {0, 0};
+static matrix_data_t S_inv_storage_data[1] = {0};
+
+static matrix_data_t K_H_storage_data[4] = {0, 0, 0, 0};
+static matrix_data_t K_H_P_storage_data[4] = {0, 0, 0, 0};
+
 const kf_config_S default_simple_config = {
     .X_init = &X_init,
     .F = &F,
@@ -50,9 +56,14 @@ const kf_config_S default_simple_config = {
 
     .temp_measurement_storage = {1, temp_measurement_storage_data},
 
+    .P_Ht_storage = {2, P_Ht_storage},
     .Y_matrix_storage = {1, Y_matrix_storage},
     .S_matrix_storage = {1, S_matrix_storage},
+    .S_inv_matrix_storage = {1, S_inv_storage_data},
     .K_matrix_storage = {2, K_matrix_storage},
+
+    .K_H_storage = {4, K_H_storage_data},
+    .K_H_P_storage = {4, K_H_P_storage_data},
 };
 
 TEST_GROUP(kalman_predict_test){void setup(){} void teardown(){}};

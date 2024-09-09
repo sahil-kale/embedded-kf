@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "cholesky.h"
+
 static bool is_matrix_square_and_matches_states(const matrix_t* matrix, size_t num_states);
 static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, size_t required_size);
 
@@ -156,6 +158,34 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->P_Ht_storage, kf_data->num_states * kf_data->num_measurements);
+        kf_data->P_Ht_temp.rows = kf_data->num_states;
+        kf_data->P_Ht_temp.cols = kf_data->num_measurements;
+        kf_data->P_Ht_temp.data = config->P_Ht_storage.data;
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->S_inv_matrix_storage, kf_data->num_measurements * kf_data->num_measurements);
+        kf_data->S_inv_temp.rows = kf_data->num_measurements;
+        kf_data->S_inv_temp.cols = kf_data->num_measurements;
+        kf_data->S_inv_temp.data = config->S_inv_matrix_storage.data;
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->K_H_storage, kf_data->num_states * kf_data->num_states);
+        kf_data->K_H_temp.rows = kf_data->num_states;
+        kf_data->K_H_temp.cols = kf_data->num_states;
+        kf_data->K_H_temp.data = config->K_H_storage.data;
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->K_H_P_storage, kf_data->num_states * kf_data->num_states);
+        kf_data->K_H_P_temp.rows = kf_data->num_states;
+        kf_data->K_H_P_temp.cols = kf_data->num_states;
+        kf_data->K_H_P_temp.data = config->K_H_P_storage.data;
+    }
+
+    if (ret == KF_ERROR_NONE) {
         kf_data->initialized = true;
     }
 
@@ -230,6 +260,31 @@ kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bo
         matrix_sub_inplace_b(z, &kf_data->Y_temp);
 
         // calculate S: S = H * P * H^T + R
+
+        // first, determine P * H^T
+        matrix_mult_transb(&kf_data->P, kf_data->config->H, &kf_data->P_Ht_temp);
+
+        matrix_mult(kf_data->config->H, &kf_data->P_Ht_temp, &kf_data->S_temp, kf_data->config->temp_measurement_storage.data);
+        // now, add R to S
+        matrix_add_inplace(&kf_data->S_temp, kf_data->config->R);
+
+        // calculate K: K = P * H^T * S^-1
+        cholesky_decompose_lower(&kf_data->S_temp);
+        matrix_invert_lower(&kf_data->S_temp, &kf_data->S_inv_temp);
+        matrix_mult(&kf_data->P_Ht_temp, &kf_data->S_inv_temp, &kf_data->K_temp, kf_data->config->temp_measurement_storage.data);
+
+        // update x_hat: x = x + K * y
+        matrix_t X_hat_temp = {kf_data->num_states, 1, kf_data->config->temp_x_hat_storage.data};
+        matrix_mult(&kf_data->K_temp, &kf_data->Y_temp, &X_hat_temp, kf_data->config->temp_measurement_storage.data);
+
+        matrix_add_inplace(&kf_data->X, &X_hat_temp);
+
+        // update P: P = (I - K * H) * P
+        // which is equivalent to P = P - K * H * P
+        matrix_mult(&kf_data->K_temp, kf_data->config->H, &kf_data->K_H_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_mult(&kf_data->K_H_temp, &kf_data->P, &kf_data->K_H_P_temp, kf_data->config->temp_x_hat_storage.data);
+
+        matrix_sub(&kf_data->P, &kf_data->K_H_P_temp, &kf_data->P);
     }
 
     return ret;

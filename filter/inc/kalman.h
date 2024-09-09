@@ -39,9 +39,15 @@ typedef struct {
 
     kf_matrix_storage_S temp_measurement_storage;  // min size is num_measurements * 1
 
-    kf_matrix_storage_S Y_matrix_storage;  // min size is num_measurements * 1
-    kf_matrix_storage_S S_matrix_storage;  // min size is num_measurements * num_measurements
+    kf_matrix_storage_S P_Ht_storage;          // min size is num_states * num_measurements
+    kf_matrix_storage_S Y_matrix_storage;      // min size is num_measurements * 1
+    kf_matrix_storage_S S_matrix_storage;      // min size is num_measurements * num_measurements
+    kf_matrix_storage_S S_inv_matrix_storage;  // min size is num_measurements * num_measurements
+
     kf_matrix_storage_S K_matrix_storage;  // min size is num_states * num_measurements
+
+    kf_matrix_storage_S K_H_storage;    // min size is num_states * num_states
+    kf_matrix_storage_S K_H_P_storage;  // min size is num_states * num_states
 } kf_config_S;
 
 typedef struct {
@@ -52,9 +58,14 @@ typedef struct {
     matrix_t X;
     matrix_t P;
 
+    matrix_t P_Ht_temp;
     matrix_t Y_temp;
     matrix_t S_temp;
+    matrix_t S_inv_temp;
     matrix_t K_temp;
+
+    matrix_t K_H_temp;
+    matrix_t K_H_P_temp;
 
     size_t num_states;
     size_t num_measurements;
