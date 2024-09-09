@@ -1,0 +1,45 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Build Kalman Filter",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/test_filter_source.py",
+            "args": [],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Debug Kalman Filter Tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/filter/test/build/kalman_tests",  // Path to the compiled test executable
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}/filter/test/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",  // Path to GDB, ensure it's correct for your system
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "",  // This can be left empty for now, as it's triggered by the compound launch
+            "internalConsoleOptions": "openOnSessionStart"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Build and Debug Kalman Filter",
+            "configurations": [
+                "Build Kalman Filter",
+                "Debug Kalman Filter Tests"
+            ]
+        }
+    ]
+}
