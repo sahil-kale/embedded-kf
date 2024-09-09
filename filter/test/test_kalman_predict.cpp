@@ -27,8 +27,11 @@ static matrix_data_t P_storage[4] = {1, 0, 0, 1};
 
 static matrix_data_t temp_x_hat_storage[2] = {0, 0};
 
-static matrix_data_t temp_S_storage[1] = {0};
-static matrix_data_t temp_K_storage[2] = {0, 0};
+static matrix_data_t S_matrix_storage[1] = {0};
+static matrix_data_t K_matrix_storage[2] = {0, 0};
+
+static matrix_data_t temp_measurement_storage_data[1] = {0};
+static matrix_data_t Y_matrix_storage[1] = {0};
 
 const kf_config_S default_simple_config = {
     .X_init = &X_init,
@@ -43,10 +46,13 @@ const kf_config_S default_simple_config = {
     .P_matrix_storage = {4, P_storage},
 
     .temp_x_hat_storage = {2, temp_x_hat_storage},
-    .temp_B_storage = {0, NULL},
+    .temp_Bu_storage = {0, NULL},
 
-    .temp_S_storage = {1, temp_S_storage},
-    .temp_K_storage = {2, temp_K_storage},
+    .temp_measurement_storage = {1, temp_measurement_storage_data},
+
+    .Y_matrix_storage = {1, Y_matrix_storage},
+    .S_matrix_storage = {1, S_matrix_storage},
+    .K_matrix_storage = {2, K_matrix_storage},
 };
 
 TEST_GROUP(kalman_predict_test){void setup(){} void teardown(){}};
@@ -95,8 +101,8 @@ TEST(kalman_predict_test, kalman_predict_simple_with_control_input) {
     static matrix_data_t B_data[4] = {1, 1, 1, 1};
     static matrix_t B = {2, 2, B_data};
     config_with_B.B = &B;
-    static matrix_data_t temp_B_storage[4] = {0, 0, 0, 0};
-    config_with_B.temp_B_storage = {4, temp_B_storage};
+    static matrix_data_t temp_Bu_storage[4] = {0, 0, 0, 0};
+    config_with_B.temp_Bu_storage = {4, temp_Bu_storage};
 
     kf_error_E error = kf_init(&kf_data, &config_with_B);
     CHECK_EQUAL(KF_ERROR_NONE, error);
@@ -138,8 +144,8 @@ TEST(kalman_predict_test, invalid_control_input_dims) {
     static matrix_data_t B_data[4] = {1, 1, 1, 1};
     static matrix_t B = {2, 2, B_data};
     config_with_B.B = &B;
-    static matrix_data_t temp_B_storage[4] = {0, 0, 0, 0};
-    config_with_B.temp_B_storage = {4, temp_B_storage};
+    static matrix_data_t temp_Bu_storage[4] = {0, 0, 0, 0};
+    config_with_B.temp_Bu_storage = {4, temp_Bu_storage};
     kf_error_E error = kf_init(&kf_data, &config_with_B);
     CHECK_EQUAL(KF_ERROR_NONE, error);
 

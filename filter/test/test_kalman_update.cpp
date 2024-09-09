@@ -28,8 +28,11 @@ static matrix_data_t P_storage[4] = {1, 0, 0, 1};
 
 static matrix_data_t temp_x_hat_storage[2] = {0, 0};
 
-static matrix_data_t temp_S_storage[1] = {0};
-static matrix_data_t temp_K_storage[2] = {0, 0};
+static matrix_data_t S_matrix_storage[1] = {0};
+static matrix_data_t K_matrix_storage[2] = {0, 0};
+
+static matrix_data_t temp_measurement_storage_data[1] = {0};
+static matrix_data_t Y_matrix_storage[1] = {0};
 
 const kf_config_S default_simple_config = {
     .X_init = &X_init,
@@ -44,10 +47,13 @@ const kf_config_S default_simple_config = {
     .P_matrix_storage = {4, P_storage},
 
     .temp_x_hat_storage = {2, temp_x_hat_storage},
-    .temp_B_storage = {0, NULL},
+    .temp_Bu_storage = {0, NULL},
 
-    .temp_S_storage = {1, temp_S_storage},
-    .temp_K_storage = {2, temp_K_storage},
+    .temp_measurement_storage = {1, temp_measurement_storage_data},
+
+    .Y_matrix_storage = {1, Y_matrix_storage},
+    .S_matrix_storage = {1, S_matrix_storage},
+    .K_matrix_storage = {2, K_matrix_storage},
 };
 
 TEST_GROUP(kalman_update_test){void setup(){} void teardown(){}};
@@ -58,8 +64,21 @@ TEST(kalman_update_test, kalman_update_not_initialized) {
 
     kf_data_S kf_data;
     memset(&kf_data, 0, sizeof(kf_data));
-    error = kf_update(&kf_data, NULL, NULL, 0U);
+
+    matrix_data_t z_data[1] = {0};
+    matrix_t z = {1, 1, z_data};
+
+    error = kf_update(&kf_data, &z, NULL, 0U);
     CHECK_EQUAL(KF_ERROR_NOT_INITIALIZED, error);
+}
+
+TEST(kalman_update_test, kalman_update_invalid_Z) {
+    kf_data_S kf_data;
+    kf_error_E error = kf_init(&kf_data, &default_simple_config);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+
+    error = kf_update(&kf_data, NULL, NULL, 0U);
+    CHECK_EQUAL(KF_ERROR_INVALID_POINTER, error);
 }
 
 TEST(kalman_update_test, kalman_update_simple) {
