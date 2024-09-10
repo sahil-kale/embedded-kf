@@ -23,6 +23,9 @@ static matrix_t H = {1, 2, H_data};
 static matrix_data_t X_storage[2] = {0, 0};
 static matrix_data_t P_storage[4] = {1, 0, 0, 1};
 
+static matrix_data_t temp_H_storage[2] = {0, 0};
+static matrix_data_t temp_R_storage[1] = {0};
+
 static matrix_data_t temp_x_hat_storage[2] = {0, 0};
 static matrix_data_t S_matrix_storage[1] = {0};
 static matrix_data_t K_matrix_storage[2] = {0, 0};
@@ -52,6 +55,9 @@ const kf_config_S default_simple_config = {
     .temp_Bu_storage = {0, NULL},
 
     .temp_measurement_storage = {1, temp_measurement_storage_data},
+
+    .H_temp_storage = {2, temp_H_storage},
+    .R_temp_storage = {1, temp_R_storage},
 
     .P_Ht_storage = {2, P_Ht_storage},
     .Y_matrix_storage = {1, Y_matrix_storage},

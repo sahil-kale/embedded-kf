@@ -147,6 +147,15 @@ static kf_error_E kf_setup_temporary_matrixes(kf_data_S* const kf_data) {
     }
 
     if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->H_temp_storage, kf_data->num_states * kf_data->num_measurements);
+        kf_data->H_temp.data = config->H_temp_storage.data;
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        ret = validate_matrix_storage(&config->R_temp_storage, kf_data->num_measurements * kf_data->num_measurements);
+    }
+
+    if (ret == KF_ERROR_NONE) {
         ret = kf_setup_matrix_from_storage(&kf_data->Y_temp, &config->Y_matrix_storage, kf_data->num_measurements, 1);
     }
 
@@ -259,8 +268,6 @@ kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u) {
 
 kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bool* const measurement_validity,
                      const size_t num_measurements) {
-    (void)measurement_validity;
-    (void)num_measurements;
     kf_error_E ret = KF_ERROR_NONE;
 
     if ((kf_data == NULL) || (z == NULL)) {
@@ -268,20 +275,39 @@ kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bo
     } else if (kf_data->initialized == false) {
         ret = KF_ERROR_NOT_INITIALIZED;
     } else {
-        ret = KF_ERROR_NONE;
+        if ((measurement_validity != NULL) && (num_measurements != kf_data->num_measurements)) {
+            ret = KF_ERROR_INVALID_DIMENSIONS;
+        } else {
+            ret = KF_ERROR_NONE;
+        }
     }
 
     if (ret == KF_ERROR_NONE) {
+        kf_data->H_temp.cols = kf_data->num_states;
+        kf_data->H_temp.rows = kf_data->num_measurements;
+        matrix_copy(kf_data->config->H, &kf_data->H_temp);
+
+        if (measurement_validity != NULL) {
+            // zero out columns of the H_temp matrix if the corrosponding measurement is invalid
+            for (size_t i = 0; i < num_measurements; i++) {
+                if (measurement_validity[i] == false) {
+                    for (size_t j = 0; j < kf_data->num_states; j++) {
+                        kf_data->H_temp.data[i * kf_data->num_states + j] = 0;
+                    }
+                }
+            }
+        }
+
         // calculate innovation: y = z - H * x_hat
-        matrix_mult(kf_data->config->H, &kf_data->X, &kf_data->Y_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_mult(&kf_data->H_temp, &kf_data->X, &kf_data->Y_temp, kf_data->config->temp_measurement_storage.data);
         matrix_sub_inplace_b(z, &kf_data->Y_temp);
 
         // calculate S: S = H * P * H^T + R
 
         // first, determine P * H^T
-        matrix_mult_transb(&kf_data->P, kf_data->config->H, &kf_data->P_Ht_temp);
+        matrix_mult_transb(&kf_data->P, &kf_data->H_temp, &kf_data->P_Ht_temp);
 
-        matrix_mult(kf_data->config->H, &kf_data->P_Ht_temp, &kf_data->S_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_mult(&kf_data->H_temp, &kf_data->P_Ht_temp, &kf_data->S_temp, kf_data->config->temp_measurement_storage.data);
         // now, add R to S
         matrix_add_inplace(&kf_data->S_temp, kf_data->config->R);
 
@@ -298,7 +324,7 @@ kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bo
 
         // update P: P = (I - K * H) * P
         // which is equivalent to P = P - K * H * P
-        matrix_mult(&kf_data->K_temp, kf_data->config->H, &kf_data->K_H_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_mult(&kf_data->K_temp, &kf_data->H_temp, &kf_data->K_H_temp, kf_data->config->temp_measurement_storage.data);
         matrix_mult(&kf_data->K_H_temp, &kf_data->P, &kf_data->K_H_P_temp, kf_data->config->temp_x_hat_storage.data);
 
         matrix_sub(&kf_data->P, &kf_data->K_H_P_temp, &kf_data->P);
