@@ -65,6 +65,7 @@ if __name__ == "__main__":
         "doxygen",
         "cmake",
         "cpputest",
+        "clang-tidy",
     ]
 
     pip_components = ["black"]
