@@ -13,5 +13,7 @@ jobs:
           submodules: recursive
       - name: Set up system
         run: python3 scripts/setup.py --skip-upgrade
+      - name: Run Lint
+        run: python3 scripts/lint.py --dry-run
       - name: Check Code Format
         run: python3 scripts/format.py --dry-run

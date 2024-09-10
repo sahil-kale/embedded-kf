@@ -1,4 +1,4 @@
-import os
+from util import *
 import subprocess
 import sys
 import argparse
@@ -8,28 +8,12 @@ EMBEDDED_EXTENSIONS = (".c", ".h", ".cpp", ".hpp")
 PYTHON_EXTENSION = ".py"
 
 
-def get_files_with_extensions(extensions):
-    """
-    Get a list of all files with the specified extensions, excluding certain directories.
-    """
-    files = []
-    for root, dirs, filenames in os.walk("."):
-        # Modify 'dirs' in-place to exclude unwanted directories by name
-        dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
-        files.extend(
-            os.path.join(root, filename)
-            for filename in filenames
-            if filename.endswith(extensions)
-        )
-    return files
-
-
 def embedded_fmt(dry_run=False):
     """
     Format all C/C++ files at once using clang-format.
     If dry_run is True, it will only check if any formatting is required without making changes.
     """
-    embedded_files = get_files_with_extensions(EMBEDDED_EXTENSIONS)
+    embedded_files = get_files_with_extensions(EMBEDDED_EXTENSIONS, EXCLUDE_DIRS)
     if embedded_files:
         if dry_run:
             result = subprocess.run(
@@ -49,7 +33,7 @@ def python_fmt(dry_run=False):
     Format all Python files at once using black.
     If dry_run is True, it will only check if any formatting is required without making changes.
     """
-    python_files = get_files_with_extensions((PYTHON_EXTENSION,))
+    python_files = get_files_with_extensions((PYTHON_EXTENSION,), EXCLUDE_DIRS)
     if python_files:
         if dry_run:
             result = subprocess.run(

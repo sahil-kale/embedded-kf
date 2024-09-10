@@ -23,7 +23,7 @@ static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, si
     return ret;
 }
 
-kf_error_E kf_setup_matrix_from_storage(matrix_t* matrix, const kf_matrix_storage_S* storage, size_t rows, size_t cols) {
+static kf_error_E kf_setup_matrix_from_storage(matrix_t* matrix, const kf_matrix_storage_S* storage, size_t rows, size_t cols) {
     kf_error_E ret = validate_matrix_storage(storage, rows * cols);
     if (ret == KF_ERROR_NONE) {
         matrix->rows = rows;
@@ -33,17 +33,10 @@ kf_error_E kf_setup_matrix_from_storage(matrix_t* matrix, const kf_matrix_storag
     return ret;
 }
 
-kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
+static kf_error_E kf_validate_configuration(kf_data_S* const kf_data) {
     kf_error_E ret = KF_ERROR_NONE;
 
-    const bool invalid_pointer = (kf_data == NULL) || (config == NULL);
-
-    if (invalid_pointer) {
-        ret = KF_ERROR_INVALID_POINTER;
-    } else {
-        memset(kf_data, 0, sizeof(kf_data_S));
-        kf_data->config = config;
-    }
+    const kf_config_S* const config = kf_data->config;
 
     // Make sure all the pointers in the config are not NULL
     bool invalid_matrix_pointer = false;
@@ -110,6 +103,14 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
         kf_data->num_controls = config->B->cols;
     }
 
+    return ret;
+}
+
+static kf_error_E kf_setup_temporary_matrixes(kf_data_S* const kf_data) {
+    kf_error_E ret = KF_ERROR_NONE;
+
+    const kf_config_S* const config = kf_data->config;
+
     if (ret == KF_ERROR_NONE) {
         ret = validate_matrix_storage(&config->X_matrix_storage, kf_data->num_states);
     }
@@ -172,6 +173,29 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     if (ret == KF_ERROR_NONE) {
         ret =
             kf_setup_matrix_from_storage(&kf_data->K_H_P_temp, &config->K_H_P_storage, kf_data->num_states, kf_data->num_states);
+    }
+
+    return ret;
+}
+
+kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
+    kf_error_E ret = KF_ERROR_NONE;
+
+    const bool invalid_pointer = (kf_data == NULL) || (config == NULL);
+
+    if (invalid_pointer) {
+        ret = KF_ERROR_INVALID_POINTER;
+    } else {
+        memset(kf_data, 0, sizeof(kf_data_S));
+        kf_data->config = config;
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        ret = kf_validate_configuration(kf_data);
+    }
+
+    if (ret == KF_ERROR_NONE) {
+        ret = kf_setup_temporary_matrixes(kf_data);
     }
 
     if (ret == KF_ERROR_NONE) {
