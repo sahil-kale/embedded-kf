@@ -126,4 +126,37 @@ TEST(kalman_update_test, kalman_update_simple) {
     verify_matrix_equal(&P, &kf_data.P);
 }
 
+// Test that an update with invalid measurement size fails
+TEST(kalman_update_test, kalman_update_invalid_measurement_size) {
+    kf_data_S kf_data;
+    kf_error_E error = kf_init(&kf_data, &default_simple_config);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+
+    matrix_data_t Z_data[2] = {0, 0};
+    matrix_t Z = {2, 1, Z_data};
+
+    bool measurement_validity[2] = {true};
+
+    error = kf_update(&kf_data, &Z, measurement_validity, 2U);
+    CHECK_EQUAL(KF_ERROR_INVALID_DIMENSIONS, error);
+}
+
 // Test an update with a measurement that is invalid (async measurement)
+TEST(kalman_update_test, kalman_update_invalid_measurement) {
+    kf_data_S kf_data;
+    kf_error_E error = kf_init(&kf_data, &default_simple_config);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+
+    matrix_data_t Z_data[1] = {0};
+    matrix_t Z = {1, 1, Z_data};
+
+    bool measurement_validity[1] = {false};
+
+    // The measurement is invalid, so the state and covariance should not change
+
+    error = kf_update(&kf_data, &Z, measurement_validity, 1U);
+    CHECK_EQUAL(KF_ERROR_NONE, error);
+
+    verify_matrix_equal(&kf_data.X, default_simple_config.X_init);
+    verify_matrix_equal(&kf_data.P, default_simple_config.P_init);
+}
