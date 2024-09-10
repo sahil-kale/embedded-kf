@@ -6,66 +6,8 @@ extern "C" {
 #include "matrix.h"
 }
 
+#include "configs.hpp"
 #include "matrix_test_util.hpp"
-
-static matrix_data_t X_init_data[2] = {3, 4};
-static matrix_data_t F_data[4] = {1, 0.001, 0, 1};
-static matrix_data_t P_init_data[4] = {9999, 9999, 9999, 9999};
-static matrix_data_t Q_data[4] = {1, 0, 0, 1};
-
-static matrix_data_t R_data[1] = {1};
-static matrix_data_t H_data[2] = {1, 0};
-
-static matrix_t X_init = {2, 1, X_init_data};
-static matrix_t F = {2, 2, F_data};
-static matrix_t P_init = {2, 2, P_init_data};
-static matrix_t Q = {2, 2, Q_data};
-static matrix_t R = {1, 1, R_data};
-static matrix_t H = {1, 2, H_data};
-
-static matrix_data_t X_storage[2] = {0, 0};
-static matrix_data_t P_storage[4] = {1, 0, 0, 1};
-
-static matrix_data_t temp_x_hat_storage[2] = {0, 0};
-
-static matrix_data_t S_matrix_storage[1] = {0};
-static matrix_data_t K_matrix_storage[2] = {0, 0};
-
-static matrix_data_t temp_measurement_storage_data[1] = {0};
-static matrix_data_t Y_matrix_storage[1] = {0};
-
-static matrix_data_t P_Ht_storage[2] = {0, 0};
-static matrix_data_t S_inv_storage_data[1] = {0};
-
-static matrix_data_t K_H_storage_data[4] = {0, 0, 0, 0};
-static matrix_data_t K_H_P_storage_data[4] = {0, 0, 0, 0};
-
-const kf_config_S default_simple_config = {
-    .X_init = &X_init,
-    .F = &F,
-    .B = NULL,
-    .Q = &Q,
-    .P_init = &P_init,
-    .H = &H,
-    .R = &R,
-
-    .X_matrix_storage = {2, X_storage},
-    .P_matrix_storage = {4, P_storage},
-
-    .temp_x_hat_storage = {2, temp_x_hat_storage},
-    .temp_Bu_storage = {0, NULL},
-
-    .temp_measurement_storage = {1, temp_measurement_storage_data},
-
-    .P_Ht_storage = {2, P_Ht_storage},
-    .Y_matrix_storage = {1, Y_matrix_storage},
-    .S_matrix_storage = {1, S_matrix_storage},
-    .S_inv_matrix_storage = {1, S_inv_storage_data},
-    .K_matrix_storage = {2, K_matrix_storage},
-
-    .K_H_storage = {4, K_H_storage_data},
-    .K_H_P_storage = {4, K_H_P_storage_data},
-};
 
 TEST_GROUP(kalman_update_test){void setup(){} void teardown(){}};
 
@@ -105,7 +47,7 @@ TEST(kalman_update_test, kalman_update_simple) {
     matrix_t Y = {1, 1, y_data};
 
     matrix_data_t P_data[4];
-    memcpy(P_data, P_init_data, 4 * sizeof(matrix_data_t));
+    memcpy(P_data, default_simple_config.P_init->data, 4 * sizeof(matrix_data_t));
     matrix_t P = {2, 2, P_data};
 
     matrix_data_t x_hat_data[2];
@@ -116,7 +58,7 @@ TEST(kalman_update_test, kalman_update_simple) {
     matrix_data_t H_x_hat_data[1] = {0};
     matrix_t H_x_hat = {1, 1, H_x_hat_data};
 
-    matrix_mult(&H, &x_hat, &H_x_hat, aux_data);
+    matrix_mult(default_simple_config.H, &x_hat, &H_x_hat, aux_data);
 
     matrix_sub(&Z, &H_x_hat, &Y);
 
@@ -124,12 +66,12 @@ TEST(kalman_update_test, kalman_update_simple) {
     matrix_data_t H_P_data[2] = {0, 0};
     matrix_t H_P = {1, 2, H_P_data};
 
-    matrix_mult(&H, &P, &H_P, aux_data);
+    matrix_mult(default_simple_config.H, &P, &H_P, aux_data);
 
     matrix_data_t H_P_Ht_data[1] = {0};
     matrix_t H_P_Ht = {1, 1, H_P_Ht_data};
 
-    matrix_mult_transb(&H_P, &H, &H_P_Ht);
+    matrix_mult_transb(&H_P, default_simple_config.H, &H_P_Ht);
 
     matrix_data_t S_data[1] = {0};
     matrix_t S = {1, 1, S_data};
@@ -152,7 +94,7 @@ TEST(kalman_update_test, kalman_update_simple) {
     matrix_data_t P_Ht_data[2] = {0, 0};
     matrix_t P_Ht = {2, 1, P_Ht_data};
 
-    matrix_mult_transb(&P, &H, &P_Ht);
+    matrix_mult_transb(&P, default_simple_config.H, &P_Ht);
 
     matrix_mult(&P_Ht, &S_inv, &K, aux_data);
 
@@ -168,7 +110,7 @@ TEST(kalman_update_test, kalman_update_simple) {
     matrix_data_t K_H_data[4] = {0, 0, 0, 0};
     matrix_t K_H = {2, 2, K_H_data};
 
-    matrix_mult(&K, &H, &K_H, aux_data);
+    matrix_mult(&K, default_simple_config.H, &K_H, aux_data);
 
     matrix_data_t K_H_P_data[4] = {0, 0, 0, 0};
 
