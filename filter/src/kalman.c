@@ -23,6 +23,16 @@ static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, si
     return ret;
 }
 
+kf_error_E kf_setup_matrix_from_storage(matrix_t* matrix, const kf_matrix_storage_S* storage, size_t rows, size_t cols) {
+    kf_error_E ret = validate_matrix_storage(storage, rows * cols);
+    if (ret == KF_ERROR_NONE) {
+        matrix->rows = rows;
+        matrix->cols = cols;
+        matrix->data = storage->data;
+    }
+    return ret;
+}
+
 kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     kf_error_E ret = KF_ERROR_NONE;
 
@@ -105,11 +115,8 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     if (ret == KF_ERROR_NONE) {
-        kf_data->X.rows = kf_data->num_states;
-        kf_data->X.cols = 1;
-        kf_data->X.data = config->X_matrix_storage.data;  // init temporary matrices
-
-        memcpy(kf_data->X.data, config->X_init->data, kf_data->num_states * sizeof(matrix_data_t));
+        ret = kf_setup_matrix_from_storage(&kf_data->X, &config->X_matrix_storage, kf_data->num_states, 1);
+        matrix_copy(config->X_init, &kf_data->X);
     }
 
     if (ret == KF_ERROR_NONE) {
@@ -117,10 +124,8 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     if (ret == KF_ERROR_NONE) {
-        kf_data->P.rows = kf_data->num_states;
-        kf_data->P.cols = kf_data->num_states;
-        kf_data->P.data = config->P_matrix_storage.data;
-        memcpy(kf_data->P.data, config->P_init->data, kf_data->num_states * kf_data->num_states * sizeof(matrix_data_t));
+        ret = kf_setup_matrix_from_storage(&kf_data->P, &config->P_matrix_storage, kf_data->num_states, kf_data->num_states);
+        matrix_copy(config->P_init, &kf_data->P);
     }
 
     // init temporary matrices
@@ -137,52 +142,36 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config) {
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->Y_matrix_storage, kf_data->num_measurements);
-        kf_data->Y_temp.rows = kf_data->num_measurements;
-        kf_data->Y_temp.cols = 1;
-        kf_data->Y_temp.data = config->Y_matrix_storage.data;
+        ret = kf_setup_matrix_from_storage(&kf_data->Y_temp, &config->Y_matrix_storage, kf_data->num_measurements, 1);
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->S_matrix_storage, kf_data->num_measurements * kf_data->num_measurements);
-        kf_data->S_temp.rows = kf_data->num_measurements;
-        kf_data->S_temp.cols = kf_data->num_measurements;
-        kf_data->S_temp.data = config->S_matrix_storage.data;
+        ret = kf_setup_matrix_from_storage(&kf_data->S_temp, &config->S_matrix_storage, kf_data->num_measurements,
+                                           kf_data->num_measurements);
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->K_matrix_storage, kf_data->num_states * kf_data->num_measurements);
-        kf_data->K_temp.rows = kf_data->num_states;
-        kf_data->K_temp.cols = kf_data->num_measurements;
-        kf_data->K_temp.data = config->K_matrix_storage.data;
+        ret = kf_setup_matrix_from_storage(&kf_data->K_temp, &config->K_matrix_storage, kf_data->num_states,
+                                           kf_data->num_measurements);
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->P_Ht_storage, kf_data->num_states * kf_data->num_measurements);
-        kf_data->P_Ht_temp.rows = kf_data->num_states;
-        kf_data->P_Ht_temp.cols = kf_data->num_measurements;
-        kf_data->P_Ht_temp.data = config->P_Ht_storage.data;
+        ret = kf_setup_matrix_from_storage(&kf_data->P_Ht_temp, &config->P_Ht_storage, kf_data->num_states,
+                                           kf_data->num_measurements);
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->S_inv_matrix_storage, kf_data->num_measurements * kf_data->num_measurements);
-        kf_data->S_inv_temp.rows = kf_data->num_measurements;
-        kf_data->S_inv_temp.cols = kf_data->num_measurements;
-        kf_data->S_inv_temp.data = config->S_inv_matrix_storage.data;
+        ret = kf_setup_matrix_from_storage(&kf_data->S_inv_temp, &config->S_inv_matrix_storage, kf_data->num_measurements,
+                                           kf_data->num_measurements);
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->K_H_storage, kf_data->num_states * kf_data->num_states);
-        kf_data->K_H_temp.rows = kf_data->num_states;
-        kf_data->K_H_temp.cols = kf_data->num_states;
-        kf_data->K_H_temp.data = config->K_H_storage.data;
+        ret = kf_setup_matrix_from_storage(&kf_data->K_H_temp, &config->K_H_storage, kf_data->num_states, kf_data->num_states);
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->K_H_P_storage, kf_data->num_states * kf_data->num_states);
-        kf_data->K_H_P_temp.rows = kf_data->num_states;
-        kf_data->K_H_P_temp.cols = kf_data->num_states;
-        kf_data->K_H_P_temp.data = config->K_H_P_storage.data;
+        ret =
+            kf_setup_matrix_from_storage(&kf_data->K_H_P_temp, &config->K_H_P_storage, kf_data->num_states, kf_data->num_states);
     }
 
     if (ret == KF_ERROR_NONE) {

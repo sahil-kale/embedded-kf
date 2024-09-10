@@ -5,66 +5,8 @@ extern "C" {
 #include "matrix.h"
 }
 
+#include "configs.hpp"
 #include "matrix_test_util.hpp"
-
-static matrix_data_t X_init_data[2] = {3, 4};
-static matrix_data_t F_data[4] = {1, 0.001, 0, 1};
-static matrix_data_t P_init_data[4] = {0, 0, 0, 0};
-static matrix_data_t Q_data[4] = {1, 0, 0, 1};
-
-static matrix_data_t R_data[1] = {1};
-static matrix_data_t H_data[2] = {1, 0};
-
-static matrix_t X_init = {2, 1, X_init_data};
-static matrix_t F = {2, 2, F_data};
-static matrix_t P_init = {2, 2, P_init_data};
-static matrix_t Q = {2, 2, Q_data};
-static matrix_t R = {1, 1, R_data};
-static matrix_t H = {1, 2, H_data};
-
-static matrix_data_t X_storage[2] = {0, 0};
-static matrix_data_t P_storage[4] = {1, 0, 0, 1};
-
-static matrix_data_t temp_x_hat_storage[2] = {0, 0};
-
-static matrix_data_t S_matrix_storage[1] = {0};
-static matrix_data_t K_matrix_storage[2] = {0, 0};
-
-static matrix_data_t temp_measurement_storage_data[1] = {0};
-static matrix_data_t Y_matrix_storage[1] = {0};
-
-static matrix_data_t P_Ht_storage[2] = {0, 0};
-static matrix_data_t S_inv_storage_data[1] = {0};
-
-static matrix_data_t K_H_storage_data[4] = {0, 0, 0, 0};
-static matrix_data_t K_H_P_storage_data[4] = {0, 0, 0, 0};
-
-const kf_config_S default_simple_config = {
-    .X_init = &X_init,
-    .F = &F,
-    .B = NULL,
-    .Q = &Q,
-    .P_init = &P_init,
-    .H = &H,
-    .R = &R,
-
-    .X_matrix_storage = {2, X_storage},
-    .P_matrix_storage = {4, P_storage},
-
-    .temp_x_hat_storage = {2, temp_x_hat_storage},
-    .temp_Bu_storage = {0, NULL},
-
-    .temp_measurement_storage = {1, temp_measurement_storage_data},
-
-    .P_Ht_storage = {2, P_Ht_storage},
-    .Y_matrix_storage = {1, Y_matrix_storage},
-    .S_matrix_storage = {1, S_matrix_storage},
-    .S_inv_matrix_storage = {1, S_inv_storage_data},
-    .K_matrix_storage = {2, K_matrix_storage},
-
-    .K_H_storage = {4, K_H_storage_data},
-    .K_H_P_storage = {4, K_H_P_storage_data},
-};
 
 TEST_GROUP(kalman_predict_test){void setup(){} void teardown(){}};
 
@@ -88,15 +30,15 @@ TEST(kalman_predict_test, kalman_predict_simple) {
     // Calculate the next x hat, x(k|k-1) = F*x(k-1)
     matrix_data_t X_storage_test[2] = {0, 0};
     matrix_t x_hat = {2, 1, X_storage_test};
-    matrix_mult(&F, &kf_data.X, &x_hat, aux_data);
+    matrix_mult(default_simple_config.F, &kf_data.X, &x_hat, aux_data);
 
     // Calculate the next P, P(k|k-1) = F*P(k-1)*F' + Q
     matrix_data_t P_storage_test[4] = {0, 0, 0, 0};
     matrix_t P = {2, 2, P_storage_test};
 
-    matrix_mult(&F, &kf_data.P, &P, aux_data);
-    matrix_mult_transb(&P, &F, &P);
-    matrix_add_inplace(&P, &Q);
+    matrix_mult(default_simple_config.F, &kf_data.P, &P, aux_data);
+    matrix_mult_transb(&P, default_simple_config.F, &P);
+    matrix_add_inplace(&P, default_simple_config.Q);
 
     error = kf_predict(&kf_data, NULL);
 
@@ -126,7 +68,7 @@ TEST(kalman_predict_test, kalman_predict_simple_with_control_input) {
     // Calculate the next x hat, x(k|k-1) = F*x(k-1) + B*u
     matrix_data_t X_storage_test[2] = {0, 0};
     matrix_t x_hat = {2, 1, X_storage_test};
-    matrix_mult(&F, &kf_data.X, &x_hat, aux_data);
+    matrix_mult(default_simple_config.F, &kf_data.X, &x_hat, aux_data);
 
     // temporary matrix to store B*u
     matrix_data_t Bu_storage[2] = {0, 0};
@@ -138,9 +80,9 @@ TEST(kalman_predict_test, kalman_predict_simple_with_control_input) {
     matrix_data_t P_storage_test[4] = {0, 0, 0, 0};
     matrix_t P = {2, 2, P_storage_test};
 
-    matrix_mult(&F, &kf_data.P, &P, aux_data);
-    matrix_mult_transb(&P, &F, &P);
-    matrix_add_inplace(&P, &Q);
+    matrix_mult(default_simple_config.F, &kf_data.P, &P, aux_data);
+    matrix_mult_transb(&P, default_simple_config.F, &P);
+    matrix_add_inplace(&P, default_simple_config.Q);
 
     error = kf_predict(&kf_data, &u);
     CHECK_EQUAL(KF_ERROR_NONE, error);
