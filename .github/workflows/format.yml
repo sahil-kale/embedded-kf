@@ -14,6 +14,6 @@ jobs:
       - name: Set up system
         run: python3 scripts/setup.py --skip-upgrade
       - name: Run Lint
-        run: python3 scripts/lint.py --dry-run
+        run: python3 scripts/lint.py
       - name: Check Code Format
         run: python3 scripts/format.py --dry-run

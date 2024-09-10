@@ -1,5 +1,4 @@
 import os
-import argparse
 from util import *
 
 INCLUDE_DIRS = [
@@ -31,30 +30,18 @@ EXCLUDED_CHECKS = [
 INCLUDE_DIR_STR = " -I" + " -I".join(INCLUDE_DIRS)
 
 
-def run_clang_tidy(file, checks, include_dir_str, dry_run):
+def run_clang_tidy(file, checks, include_dir_str):
     cmd = (
         f"clang-tidy {file} -checks={checks} -warnings-as-errors=* -- {include_dir_str}"
     )
 
-    if dry_run:
-        print(f"[DRY RUN] Command: {cmd}")
-    else:
-        print(f"Running: {cmd}")
-        result = os.system(cmd)
-        if result != 0:
-            raise RuntimeError(f"clang-tidy failed on {file}")
+    print(f"Running: {cmd}")
+    result = os.system(cmd)
+    if result != 0:
+        raise RuntimeError(f"clang-tidy failed on {file}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run clang-tidy with pedantic checks")
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Perform a dry run without executing clang-tidy",
-    )
-
-    args = parser.parse_args()
-
     # Find all of the .c files inside filter/src
     c_files = get_files_with_extensions((".c"), ["build", "test"], base_path="filter")
 
@@ -64,7 +51,7 @@ def main():
     # Run clang-tidy on all of the files with the most pedantic options
     for c_file in c_files:
         try:
-            run_clang_tidy(c_file, checks, INCLUDE_DIR_STR, args.dry_run)
+            run_clang_tidy(c_file, checks, INCLUDE_DIR_STR)
         except RuntimeError as e:
             print(e)
             exit(1)  # Exit with error code if clang-tidy fails
