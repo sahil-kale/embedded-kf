@@ -39,6 +39,10 @@ typedef struct {
 
     kf_matrix_storage_S temp_measurement_storage;  // min size is num_measurements * 1
 
+    kf_matrix_storage_S H_temp_storage;  // min size is num_measurements * num_states
+    kf_matrix_storage_S
+        R_temp_storage;  // min size is num_measurements * num_measurements (todo: figure out if this needs to be reshaped?)
+
     kf_matrix_storage_S P_Ht_storage;          // min size is num_states * num_measurements
     kf_matrix_storage_S Y_matrix_storage;      // min size is num_measurements * 1
     kf_matrix_storage_S S_matrix_storage;      // min size is num_measurements * num_measurements
@@ -57,6 +61,10 @@ typedef struct {
 
     matrix_t X;
     matrix_t P;
+
+    matrix_t H_temp;  // used during prediction step; separate matrix required to support asynchronous updates as we modify the H&
+                      // R matrix to do so
+    matrix_t R_temp;
 
     matrix_t P_Ht_temp;
     matrix_t Y_temp;
@@ -104,7 +112,7 @@ kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u);
  * @param z The measurement vector
  * @param measurement_validity Array of boolean values indicating the validity of each measurement. Can leave NULL if all
  * measurements are valid. Assumed to be of size num_measurements (rows in Z matrix)
- * @param num_measurements The number of measurements in the measurement vector - set to 0 if no measurements are available
+ * @param num_measurements The number of measurements in the measurement vector. Unused if measurement_validity is NULL
  *
  * @return kf_error_E Error code indicating the success of the update
  */
