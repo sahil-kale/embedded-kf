@@ -104,7 +104,7 @@ kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u);
  * @param z The measurement vector
  * @param measurement_validity Array of boolean values indicating the validity of each measurement. Can leave NULL if all
  * measurements are valid. Assumed to be of size num_measurements (rows in Z matrix)
- * @param num_measurements The number of measurements in the measurement vector - set to 0 if no measurements are available
+ * @param num_measurements The number of measurements in the measurement vector. Unused if measurement_validity is NULL
  *
  * @return kf_error_E Error code indicating the success of the update
  */

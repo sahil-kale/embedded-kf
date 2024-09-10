@@ -7,6 +7,10 @@
 static bool is_matrix_square_and_matches_states(const matrix_t* matrix, size_t num_states);
 static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, size_t required_size);
 
+static kf_error_E kf_setup_matrix_from_storage(matrix_t* matrix, const kf_matrix_storage_S* storage, size_t rows, size_t cols);
+static kf_error_E kf_validate_configuration(kf_data_S* kf_data);
+static kf_error_E kf_setup_temporary_matrixes(kf_data_S* kf_data);
+
 static bool is_matrix_square_and_matches_states(const matrix_t* matrix, size_t num_states) {
     return (matrix->rows == matrix->cols) && (matrix->rows == num_states);
 }
