@@ -1,11 +1,11 @@
-name: Code Format Check
+name: Generator Unit Test Check
 
 on:
   pull_request:
     branches: [ main ]
 
 jobs:
-  check-format:
+  generator-unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3 
@@ -13,7 +13,5 @@ jobs:
           submodules: recursive
       - name: Set up system
         run: python3 scripts/setup.py --skip-upgrade
-      - name: Run Lint
-        run: python3 scripts/lint.py
-      - name: Check Code Format
-        run: python3 scripts/format.py --dry-run
+      - name: Run Filter Generator Unit Tests
+        run: python3 scripts/test_filter_generator.py

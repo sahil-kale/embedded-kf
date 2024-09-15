@@ -14,14 +14,14 @@
             "name": "Debug Kalman Filter Tests",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/filter/test/build/kalman_tests",  // Path to the compiled test executable
+            "program": "${workspaceFolder}/filter/test/build/kalman_tests",  
             "args": [],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}/filter/test/build",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "/usr/bin/gdb",  // Path to GDB, ensure it's correct for your system
+            "miDebuggerPath": "/usr/bin/gdb",  
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -29,8 +29,17 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "",  // This can be left empty for now, as it's triggered by the compound launch
+            "preLaunchTask": "",  
             "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "Debug Filter Generator Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/test_filter_generator.py",
+            "args": [],
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ],
     "compounds": [
