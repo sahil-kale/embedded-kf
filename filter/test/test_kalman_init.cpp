@@ -166,21 +166,21 @@ TEST(kalman_api_test, invalid_B_matrix_dims) {
     kf_config_S config_with_B = default_simple_config;
     static matrix_t B = {2, 3, F_data};
     config_with_B.B = &B;
-    static matrix_data_t temp_Bu_storage[2] = {0};
-    config_with_B.temp_Bu_storage = {2, temp_Bu_storage};
+    static matrix_data_t temp_Bu_matrix_storage[2] = {0};
+    config_with_B.temp_Bu_matrix_storage = {2, temp_Bu_matrix_storage};
 
     check_kf_init(&kf_data, &config_with_B, KF_ERROR_NONE);
     CHECK_EQUAL(3, kf_data.num_controls);
 
     // Test with NULL B storage matrix
     kf_config_S config_with_null_B_storage = config_with_B;
-    config_with_null_B_storage.temp_Bu_storage.data = NULL;
+    config_with_null_B_storage.temp_Bu_matrix_storage.data = NULL;
 
     check_kf_init(&kf_data, &config_with_null_B_storage, KF_ERROR_INVALID_POINTER);
 
     // Test with invalid B storage matrix size
-    config_with_null_B_storage.temp_Bu_storage.size = 1;
-    config_with_null_B_storage.temp_Bu_storage.data = temp_Bu_storage;
+    config_with_null_B_storage.temp_Bu_matrix_storage.size = 1;
+    config_with_null_B_storage.temp_Bu_matrix_storage.data = temp_Bu_matrix_storage;
 
     check_kf_init(&kf_data, &config_with_null_B_storage, KF_ERROR_STORAGE_TOO_SMALL);
 }
@@ -242,16 +242,16 @@ TEST(kalman_api_test, storage_space_temp_x_hat) {
     check_kf_init(&kf_data, &config_with_storage, KF_ERROR_NONE);
 
     // Test invalid pointer for temp_x_hat matrix storage
-    kf_config_S config_with_null_temp_x_hat_storage = default_simple_config;
-    config_with_null_temp_x_hat_storage.temp_x_hat_storage.data = NULL;
+    kf_config_S config_with_null_temp_X_hat_matrix_storage = default_simple_config;
+    config_with_null_temp_X_hat_matrix_storage.temp_X_hat_matrix_storage.data = NULL;
 
-    check_kf_init(&kf_data, &config_with_null_temp_x_hat_storage, KF_ERROR_INVALID_POINTER);
+    check_kf_init(&kf_data, &config_with_null_temp_X_hat_matrix_storage, KF_ERROR_INVALID_POINTER);
 
     // Test invalid size for temp_x_hat matrix storage
-    kf_config_S config_with_invalid_temp_x_hat_storage = default_simple_config;
-    config_with_invalid_temp_x_hat_storage.temp_x_hat_storage.size = 1;
+    kf_config_S config_with_invalid_temp_X_hat_matrix_storage = default_simple_config;
+    config_with_invalid_temp_X_hat_matrix_storage.temp_X_hat_matrix_storage.size = 1;
 
-    check_kf_init(&kf_data, &config_with_invalid_temp_x_hat_storage, KF_ERROR_STORAGE_TOO_SMALL);
+    check_kf_init(&kf_data, &config_with_invalid_temp_X_hat_matrix_storage, KF_ERROR_STORAGE_TOO_SMALL);
 }
 
 TEST(kalman_api_test, storage_space_H_temp) {
@@ -390,7 +390,7 @@ TEST(kalman_api_test, storage_space_temp_P_Ht) {
     check_kf_init(&kf_data, &config_with_invalid_P_Ht_storage, KF_ERROR_STORAGE_TOO_SMALL);
 }
 
-// Test storage space for temp_measurement_storage
+// Test storage space for temp_Z_matrix_storage
 TEST(kalman_api_test, storage_space_temp_measurement) {
     kf_data_S kf_data;
     kf_config_S config_with_storage = default_simple_config;
@@ -398,16 +398,16 @@ TEST(kalman_api_test, storage_space_temp_measurement) {
     check_kf_init(&kf_data, &config_with_storage, KF_ERROR_NONE);
 
     // Test invalid pointer for temp_measurement matrix storage
-    kf_config_S config_with_null_temp_measurement_storage = default_simple_config;
-    config_with_null_temp_measurement_storage.temp_measurement_storage.data = NULL;
+    kf_config_S config_with_null_temp_Z_matrix_storage = default_simple_config;
+    config_with_null_temp_Z_matrix_storage.temp_Z_matrix_storage.data = NULL;
 
-    check_kf_init(&kf_data, &config_with_null_temp_measurement_storage, KF_ERROR_INVALID_POINTER);
+    check_kf_init(&kf_data, &config_with_null_temp_Z_matrix_storage, KF_ERROR_INVALID_POINTER);
 
     // Test invalid size for temp_measurement matrix storage
-    kf_config_S config_with_invalid_temp_measurement_storage = default_simple_config;
-    config_with_invalid_temp_measurement_storage.temp_measurement_storage.size = 0;
+    kf_config_S config_with_invalid_temp_Z_matrix_storage = default_simple_config;
+    config_with_invalid_temp_Z_matrix_storage.temp_Z_matrix_storage.size = 0;
 
-    check_kf_init(&kf_data, &config_with_invalid_temp_measurement_storage, KF_ERROR_STORAGE_TOO_SMALL);
+    check_kf_init(&kf_data, &config_with_invalid_temp_Z_matrix_storage, KF_ERROR_STORAGE_TOO_SMALL);
 }
 
 // Test storage for S_inv

@@ -135,15 +135,15 @@ static kf_error_E kf_setup_temporary_matrixes(kf_data_S* const kf_data) {
 
     // init temporary matrices
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->temp_x_hat_storage, kf_data->num_states);
+        ret = validate_matrix_storage(&config->temp_X_hat_matrix_storage, kf_data->num_states);
     }
 
     if ((ret == KF_ERROR_NONE) && (kf_data->num_controls > 0)) {
-        ret = validate_matrix_storage(&config->temp_Bu_storage, kf_data->num_states);
+        ret = validate_matrix_storage(&config->temp_Bu_matrix_storage, kf_data->num_states);
     }
 
     if (ret == KF_ERROR_NONE) {
-        ret = validate_matrix_storage(&config->temp_measurement_storage, kf_data->num_measurements);
+        ret = validate_matrix_storage(&config->temp_Z_matrix_storage, kf_data->num_measurements);
     }
 
     if (ret == KF_ERROR_NONE) {
@@ -249,16 +249,16 @@ kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u) {
 
     if (ret == KF_ERROR_NONE) {
         // Calculate the next x hat, x(k|k-1) = F*x(k-1) + B*u
-        matrix_mult(kf_data->config->F, &kf_data->X, &kf_data->X, kf_data->config->temp_x_hat_storage.data);
+        matrix_mult(kf_data->config->F, &kf_data->X, &kf_data->X, kf_data->config->temp_X_hat_matrix_storage.data);
 
         if (control_matrix_enabled) {
-            matrix_t Bu = {kf_data->num_states, 1, kf_data->config->temp_Bu_storage.data};
-            matrix_mult(kf_data->config->B, u, &Bu, kf_data->config->temp_x_hat_storage.data);
+            matrix_t Bu = {kf_data->num_states, 1, kf_data->config->temp_Bu_matrix_storage.data};
+            matrix_mult(kf_data->config->B, u, &Bu, kf_data->config->temp_X_hat_matrix_storage.data);
             matrix_add_inplace(&kf_data->X, &Bu);
         }
 
         // Calculate the next P, P(k|k-1) = F*P(k-1)*F' + Q
-        matrix_mult(kf_data->config->F, &kf_data->P, &kf_data->P, kf_data->config->temp_x_hat_storage.data);
+        matrix_mult(kf_data->config->F, &kf_data->P, &kf_data->P, kf_data->config->temp_X_hat_matrix_storage.data);
         matrix_mult_transb(&kf_data->P, kf_data->config->F, &kf_data->P);
         matrix_add_inplace(&kf_data->P, kf_data->config->Q);
     }
@@ -299,7 +299,7 @@ kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bo
         }
 
         // calculate innovation: y = z - H * x_hat
-        matrix_mult(&kf_data->H_temp, &kf_data->X, &kf_data->Y_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_mult(&kf_data->H_temp, &kf_data->X, &kf_data->Y_temp, kf_data->config->temp_Z_matrix_storage.data);
         matrix_sub_inplace_b(z, &kf_data->Y_temp);
 
         // calculate S: S = H * P * H^T + R
@@ -307,25 +307,25 @@ kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bo
         // first, determine P * H^T
         matrix_mult_transb(&kf_data->P, &kf_data->H_temp, &kf_data->P_Ht_temp);
 
-        matrix_mult(&kf_data->H_temp, &kf_data->P_Ht_temp, &kf_data->S_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_mult(&kf_data->H_temp, &kf_data->P_Ht_temp, &kf_data->S_temp, kf_data->config->temp_Z_matrix_storage.data);
         // now, add R to S
         matrix_add_inplace(&kf_data->S_temp, kf_data->config->R);
 
         // calculate K: K = P * H^T * S^-1
         cholesky_decompose_lower(&kf_data->S_temp);
         matrix_invert_lower(&kf_data->S_temp, &kf_data->S_inv_temp);
-        matrix_mult(&kf_data->P_Ht_temp, &kf_data->S_inv_temp, &kf_data->K_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_mult(&kf_data->P_Ht_temp, &kf_data->S_inv_temp, &kf_data->K_temp, kf_data->config->temp_Z_matrix_storage.data);
 
         // update x_hat: x = x + K * y
-        matrix_t X_hat_temp = {kf_data->num_states, 1, kf_data->config->temp_x_hat_storage.data};
-        matrix_mult(&kf_data->K_temp, &kf_data->Y_temp, &X_hat_temp, kf_data->config->temp_measurement_storage.data);
+        matrix_t X_hat_temp = {kf_data->num_states, 1, kf_data->config->temp_X_hat_matrix_storage.data};
+        matrix_mult(&kf_data->K_temp, &kf_data->Y_temp, &X_hat_temp, kf_data->config->temp_Z_matrix_storage.data);
 
         matrix_add_inplace(&kf_data->X, &X_hat_temp);
 
         // update P: P = (I - K * H) * P
         // which is equivalent to P = P - K * H * P
-        matrix_mult(&kf_data->K_temp, &kf_data->H_temp, &kf_data->K_H_temp, kf_data->config->temp_measurement_storage.data);
-        matrix_mult(&kf_data->K_H_temp, &kf_data->P, &kf_data->K_H_P_temp, kf_data->config->temp_x_hat_storage.data);
+        matrix_mult(&kf_data->K_temp, &kf_data->H_temp, &kf_data->K_H_temp, kf_data->config->temp_Z_matrix_storage.data);
+        matrix_mult(&kf_data->K_H_temp, &kf_data->P, &kf_data->K_H_P_temp, kf_data->config->temp_X_hat_matrix_storage.data);
 
         matrix_sub(&kf_data->P, &kf_data->K_H_P_temp, &kf_data->P);
     }

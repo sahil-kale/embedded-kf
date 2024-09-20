@@ -54,8 +54,8 @@ TEST(kalman_predict_test, kalman_predict_simple_with_control_input) {
     static matrix_data_t B_data[4] = {1, 1, 1, 1};
     static matrix_t B = {2, 2, B_data};
     config_with_B.B = &B;
-    static matrix_data_t temp_Bu_storage[4] = {0, 0, 0, 0};
-    config_with_B.temp_Bu_storage = {4, temp_Bu_storage};
+    static matrix_data_t temp_Bu_matrix_storage[4] = {0, 0, 0, 0};
+    config_with_B.temp_Bu_matrix_storage = {4, temp_Bu_matrix_storage};
 
     kf_error_E error = kf_init(&kf_data, &config_with_B);
     CHECK_EQUAL(KF_ERROR_NONE, error);
@@ -97,8 +97,8 @@ TEST(kalman_predict_test, invalid_control_input_dims) {
     static matrix_data_t B_data[4] = {1, 1, 1, 1};
     static matrix_t B = {2, 2, B_data};
     config_with_B.B = &B;
-    static matrix_data_t temp_Bu_storage[4] = {0, 0, 0, 0};
-    config_with_B.temp_Bu_storage = {4, temp_Bu_storage};
+    static matrix_data_t temp_Bu_matrix_storage[4] = {0, 0, 0, 0};
+    config_with_B.temp_Bu_matrix_storage = {4, temp_Bu_matrix_storage};
     kf_error_E error = kf_init(&kf_data, &config_with_B);
     CHECK_EQUAL(KF_ERROR_NONE, error);
 

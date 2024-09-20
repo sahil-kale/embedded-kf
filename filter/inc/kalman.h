@@ -21,23 +21,23 @@ typedef struct {
 } kf_matrix_storage_S;
 
 typedef struct {
-    const matrix_t* X_init;
-    const matrix_t* F;
-    const matrix_t* B;
+    const matrix_t* X_init;  // initial state estimate
+    const matrix_t* F;       // state transition matrix
+    const matrix_t* B;       // control input matrix (optional)
 
-    const matrix_t* Q;
-    const matrix_t* P_init;
+    const matrix_t* Q;       // process noise covariance matrix
+    const matrix_t* P_init;  // initial state covariance matrix
 
-    const matrix_t* H;
-    const matrix_t* R;
+    const matrix_t* H;  // state to measurement transformation matrix
+    const matrix_t* R;  // measurement noise covariance matrix
 
     kf_matrix_storage_S X_matrix_storage;  // min size is num_states * 1
     kf_matrix_storage_S P_matrix_storage;  // min size is num_states * num_states
 
-    kf_matrix_storage_S temp_x_hat_storage;  // min size is num_states * 1
-    kf_matrix_storage_S temp_Bu_storage;     // min size is num_states * 1
+    kf_matrix_storage_S temp_X_hat_matrix_storage;  // min size is num_states * 1
+    kf_matrix_storage_S temp_Bu_matrix_storage;     // min size is num_states * 1
 
-    kf_matrix_storage_S temp_measurement_storage;  // min size is num_measurements * 1
+    kf_matrix_storage_S temp_Z_matrix_storage;  // min size is num_measurements * 1
 
     kf_matrix_storage_S H_temp_storage;  // min size is num_measurements * num_states
     kf_matrix_storage_S

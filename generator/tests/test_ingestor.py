@@ -17,7 +17,9 @@ SIMPLE_CONFIG_PATH_WITH_CONTROL = (
 from generator.ingestor import *
 
 
-@pytest.mark.parametrize("key_to_remove", ["F", "Q", "H", "R", "P", "name"])
+@pytest.mark.parametrize(
+    "key_to_remove", ["F", "Q", "H", "R", "P_init", "X_init", "name"]
+)
 def test_missing_key(key_to_remove: str):
     # load the simple config
     with open(SIMPLE_CONFIG_PATH) as f:
@@ -30,7 +32,7 @@ def test_missing_key(key_to_remove: str):
 
         # test that the exception is raised
         with pytest.raises(InvalidConfigException):
-            create_kalman_filter_config_from_dict(simple_kf_config)
+            KalmanFilterConfig(simple_kf_config)
 
 
 def test_unknown_key():
@@ -45,10 +47,10 @@ def test_unknown_key():
 
         # test that the exception is raised
         with pytest.raises(InvalidConfigException):
-            create_kalman_filter_config_from_dict(simple_kf_config)
+            KalmanFilterConfig(simple_kf_config)
 
 
-@pytest.mark.parametrize("matrix_to_edit", ["F", "Q", "H", "R", "P"])
+@pytest.mark.parametrize("matrix_to_edit", ["F", "Q", "H", "R", "P_init", "X_init"])
 def test_matrix_that_cannot_be_converted_to_numpy(matrix_to_edit):
     # load the simple config
     with open(SIMPLE_CONFIG_PATH) as f:
@@ -61,10 +63,12 @@ def test_matrix_that_cannot_be_converted_to_numpy(matrix_to_edit):
 
         # test that the exception is raised
         with pytest.raises(ValueError):
-            create_kalman_filter_config_from_dict(simple_kf_config)
+            KalmanFilterConfig(simple_kf_config)
 
 
-@pytest.mark.parametrize("matrix_with_invalid_dims", ["F", "Q", "H", "R", "P"])
+@pytest.mark.parametrize(
+    "matrix_with_invalid_dims", ["F", "Q", "H", "R", "P_init", "X_init"]
+)
 def test_matrix_with_wrong_shape(matrix_with_invalid_dims: str):
     # load the simple config
     with open(SIMPLE_CONFIG_PATH) as f:
@@ -77,7 +81,7 @@ def test_matrix_with_wrong_shape(matrix_with_invalid_dims: str):
 
         # test that the exception is raised
         with pytest.raises(InvalidDimensionsException):
-            create_kalman_filter_config_from_dict(simple_kf_config)
+            KalmanFilterConfig(simple_kf_config)
 
 
 @pytest.mark.parametrize(
@@ -91,11 +95,11 @@ def test_nominal_simple_filter_load(filter_to_load):
         simple_kf_config = config[0]
 
         # test that the exception is raised
-        kf = create_kalman_filter_config_from_dict(simple_kf_config)
+        kf = KalmanFilterConfig(simple_kf_config)
 
         assert kf.num_states == 2
         assert kf.num_measurements == 1
-        assert kf.config["name"] == simple_kf_config["name"]
+        assert kf.raw_config["name"] == simple_kf_config["name"]
 
         if filter_to_load == SIMPLE_CONFIG_PATH_WITH_CONTROL:
             assert kf.num_controls == 1
