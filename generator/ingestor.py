@@ -29,7 +29,8 @@ supported_keys = [
     {"key": "Q", "required": True, "expected_dims": (NUM_STATES_STR, NUM_STATES_STR)},
     {"key": "H", "required": True, "expected_dims": (NUM_MEASUREMENTS_STR, NUM_STATES_STR)},
     {"key": "R", "required": True, "expected_dims": (NUM_MEASUREMENTS_STR, NUM_MEASUREMENTS_STR)},
-    {"key": "P", "required": True, "expected_dims": (NUM_STATES_STR, NUM_STATES_STR)},
+    {"key": "P_init", "required": True, "expected_dims": (NUM_STATES_STR, NUM_STATES_STR)},
+    {"key": "X_init", "required": True, "expected_dims": (NUM_STATES_STR,)},
     {"key": "B", "required": False, "expected_dims": (NUM_STATES_STR, NUM_CONTROLS_STR)},
     {"key": "name", "required": True},
 ]
@@ -42,7 +43,7 @@ required_keys_set = {item["key"] for item in supported_keys if item["required"]}
 
 class KalmanFilterConfig:
     def __init__(self, config: dict):
-        self.config = config
+        self.raw_config = config
 
         # Check that all required keys are present in the config
         for key in required_keys_set:
@@ -55,7 +56,7 @@ class KalmanFilterConfig:
                 raise InvalidConfigException(f"Unknown key: {key}")
 
         # List of keys corresponding to matrices that need conversion
-        matrix_keys = ["F", "Q", "H", "R", "P"]
+        matrix_keys = ["F", "Q", "H", "R", "P_init", "X_init"]
 
         if "B" in config:
             matrix_keys.append("B")
@@ -72,10 +73,14 @@ class KalmanFilterConfig:
             self.num_controls = self.B.shape[1]
         else:
             self.num_controls = 0
+            self.B = None
 
         # Proceed with generating expected dimensions and verifying them
         expected_dims_dict = self._generate_expected_dims(matrix_keys)
         self._verify_dimensions(expected_dims_dict)
+
+        # Make an exception for X_init and reshape it to size (num_states, 1)
+        self.X_init = self.X_init.reshape(self.num_states, 1)
 
     def _generate_expected_dims(self, matrix_keys):
         """
@@ -112,7 +117,3 @@ class KalmanFilterConfig:
             actual_dim = getattr(self, key).shape
             if actual_dim != expected_dim:
                 raise InvalidDimensionsException(key, expected_dim, actual_dim)
-
-
-def create_kalman_filter_config_from_dict(filter_config: dict):
-    return KalmanFilterConfig(filter_config)
