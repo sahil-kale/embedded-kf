@@ -66,7 +66,7 @@ class KalmanFilterConfig:
             setattr(self, key, np.array(config[key], dtype=np.float32))
 
         # After matrices are converted, you can access their shapes
-        self.num_states = self.F.shape[0]
+        self.num_states = self.X_init.shape[0]
         self.num_measurements = self.H.shape[0]
 
         if "B" in config:
