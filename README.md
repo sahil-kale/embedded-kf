@@ -9,8 +9,7 @@
 
 **Key Features:**
 
-- **Memory and CPU Optimized**: Designed for real-time, low-latency operation on low-power microcontrollers.
-- **Modular API**: Offers flexibility to include only the necessary components, minimizing code footprint.
+- **Memory and CPU Optimized**: Designed for real-time, low-latency operation on embedded systems.
 - **Customizable and Extensible**: Easily configurable via JSON, with extensibility to add custom filters or measurement models.
 - **Typical Use Cases**:
   - Sensor fusion for robotics, drones, or autonomous vehicles
