@@ -1,6 +1,6 @@
-### kf-util Library Overview
+### embedded-kf Library Overview
 
-**kf-util** is a lightweight C library designed for implementing Kalman filters on embedded systems. While similar in technical scope to [kalman-clib](https://github.com/sunsided/kalman-clib), it introduces new capabilities while reusing its matrix utility functions. **kf-util** offers the following features:
+**embedded-kf** is a lightweight C library designed for implementing Kalman filters on embedded systems. While similar in technical scope to [kalman-clib](https://github.com/sunsided/kalman-clib), it introduces new capabilities while reusing its matrix utility functions. **embedded-kf** offers the following features:
 
 - **Fully statically-allocated**: No dynamic memory required, ideal for resource-constrained environments.
 - **Control vector support**: Direct integration of control-vector inputs during prediction steps.
