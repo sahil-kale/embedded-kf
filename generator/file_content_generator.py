@@ -86,9 +86,9 @@ class KalmanFilterConfigGenerator:
     def generate_measurement_update_function(self):
         # fmt: off
         return (
-            f"{self.error_enum} {self.filter_name}_update({self.generated_structure_names['measurement']}_S const * const measurement) {{\n"
+            f"{self.error_enum} {self.filter_name}_update({self.generated_structure_names['measurement']}_S * const measurement) {{\n"
             f"\tmatrix_t Z = {{{self.preprocessor_define_expressions['num_measurements']}, 1U, measurement->data}};\n"
-            f"\treturn kf_update(&{self.generated_structure_names['filter_data']}, &Z, &measurement->valid, {self.preprocessor_define_expressions['num_measurements']});\n}}"
+            f"\treturn kf_update(&{self.generated_structure_names['filter_data']}, &Z, measurement->valid, {self.preprocessor_define_expressions['num_measurements']});\n}}"
         )
         # fmt: on
 
@@ -96,7 +96,7 @@ class KalmanFilterConfigGenerator:
         if with_control:
             # fmt: off
             return (
-                f"{self.error_enum} {self.filter_name}_predict({self.generated_structure_names['control']}_S const * const control) {{\n"
+                f"{self.error_enum} {self.filter_name}_predict({self.generated_structure_names['control']}_S * const control) {{\n"
                 f"\tmatrix_t U = {{{self.preprocessor_define_expressions['num_controls']}, 1U, control->data}};\n"
                 f"\treturn kf_predict(&{self.generated_structure_names['filter_data']}, &U);\n}}"
             )
@@ -122,11 +122,11 @@ class KalmanFilterConfigGenerator:
         # fmt: off
         headers = [
             f"{self.error_enum} {self.filter_name}_init(void);",
-            f"{self.error_enum} {self.filter_name}_update({self.generated_structure_names['measurement']}_S const * const measurement);",
+            f"{self.error_enum} {self.filter_name}_update({self.generated_structure_names['measurement']}_S * const measurement);",
         ]
         if self.config.num_controls > 0:
             headers.append(
-                f"{self.error_enum} {self.filter_name}_predict({self.generated_structure_names['control']}_S const * const control);"
+                f"{self.error_enum} {self.filter_name}_predict({self.generated_structure_names['control']}_S * const control);"
             )
         else:
             headers.append(f"{self.error_enum} {self.filter_name}_predict(void);")
@@ -167,7 +167,8 @@ class KalmanFilterConfigGenerator:
         rows, cols = matrix.shape
         matrix_rows = []
         for i in range(rows):
-            row_str = ", ".join(map(str, matrix[i]))
+            # Format each number to 6 decimal places and append 'f' for C float
+            row_str = ", ".join(f"{x:.6f}F" for x in matrix[i])
             matrix_rows.append(row_str)
         return "{\n    " + ",\n    ".join(matrix_rows) + "\n}"
 
@@ -291,11 +292,11 @@ class KalmanFilterConfigGenerator:
             output_file.write('#include "kalman.h"\n\n')
             output_file.write("/* Preprocessor Defines */\n")
             output_file.write("\n".join(self.generated_preprocessor_defines) + "\n\n")
-            output_file.write("/* Function Headers */\n")
-            output_file.write("\n".join(self.generated_function_headers) + "\n\n")
             output_file.write("/* Struct Definitions */\n")
             for (
                 struct_name,
                 struct_definition,
             ) in self.generated_structure_definitions.items():
                 output_file.write("\n".join(struct_definition) + "\n\n")
+            output_file.write("/* Function Headers */\n")
+            output_file.write("\n".join(self.generated_function_headers) + "\n\n")

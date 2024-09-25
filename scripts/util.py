@@ -15,3 +15,17 @@ def get_files_with_extensions(extensions, exclude_dirs, base_path="."):
             if filename.endswith(extensions)
         )
     return files
+
+
+def build_from_cmake(cmake_path, build_dir, cmake_args):
+    """
+    Run cmake and build the project.
+    """
+    os.system(f"mkdir -p {build_dir}")
+    os.chdir(build_dir)
+    cmd = f"{cmake_path} .. {' '.join(cmake_args)}"
+    os.system(cmd)
+    ret = os.system("make all")
+    if ret != 0:
+        print("Error building the application")
+        exit(1)

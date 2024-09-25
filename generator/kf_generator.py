@@ -11,7 +11,36 @@ from ingestor import KalmanFilterConfig
 from file_content_generator import KalmanFilterConfigGenerator
 
 
-def main():
+def main(input_file: str, output_dir: str):
+    # if directory does not exist, create it
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # make inc and src directories
+    if not os.path.exists(output_dir + "/inc"):
+        os.makedirs(output_dir + "/inc")
+
+    if not os.path.exists(output_dir + "/src"):
+        os.makedirs(output_dir + "/src")
+
+    # open the input file
+    with open(input_file) as f:
+        configs = json.load(f)
+
+        for config in configs:
+            kf_config = KalmanFilterConfig(config)
+            generator = KalmanFilterConfigGenerator(kf_config)
+            c_file_name = f'{kf_config.raw_config["name"]}_config.c'
+            h_file_name = f'{kf_config.raw_config["name"]}_config.h'
+
+            # create a file path with the output directory and file name
+            c_file_path = f"{output_dir}/src/{c_file_name}"
+            h_file_path = f"{output_dir}/inc/{h_file_name}"
+
+            generator.write_to_file(c_file_path, h_file_path)
+
+
+if __name__ == "__main__":
     # add an argument parser for input file
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file", help="The input file to be processed")
@@ -23,27 +52,4 @@ def main():
     )
 
     args = parser.parse_args()
-
-    # if directory does not exist, create it
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-
-    # open the input file
-    with open(args.input_file) as f:
-        configs = json.load(f)
-
-        for config in configs:
-            kf_config = KalmanFilterConfig(config)
-            generator = KalmanFilterConfigGenerator(kf_config)
-            c_file_name = f'{kf_config.raw_config["name"]}_config.c'
-            h_file_name = f'{kf_config.raw_config["name"]}_config.h'
-
-            # create a file path with the output directory and file name
-            c_file_path = f"{args.output_dir}/{c_file_name}"
-            h_file_path = f"{args.output_dir}/{h_file_name}"
-
-            generator.write_to_file(c_file_path, h_file_path)
-
-
-if __name__ == "__main__":
-    main()
+    main(args.input_file, args.output_dir)
