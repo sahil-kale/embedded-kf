@@ -286,7 +286,7 @@ class KalmanFilterConfigGenerator:
                 "\n".join(self.generated_struct_config_definition) + "\n\n"
             )
             output_file.write("/* Function Definitions */\n")
-            output_file.write("\n".join(self.generated_function_definitions) + "\n\n")
+            output_file.write("\n\n".join(self.generated_function_definitions) + "\n\n")
 
         with open(h_output_file_path, "w") as output_file:
             output_file.write('#include "kalman.h"\n\n')
@@ -299,4 +299,4 @@ class KalmanFilterConfigGenerator:
             ) in self.generated_structure_definitions.items():
                 output_file.write("\n".join(struct_definition) + "\n\n")
             output_file.write("/* Function Headers */\n")
-            output_file.write("\n".join(self.generated_function_headers) + "\n\n")
+            output_file.write("\n\n".join(self.generated_function_headers) + "\n\n")
