@@ -63,7 +63,7 @@ $$ P_{k|k-1} = F_k P_{k-1|k-1} F_k^\top + Q_k $$
 
 ---
 
-### Update
+#### Update
 
 **Innovation or measurement pre-fit residual**
 
