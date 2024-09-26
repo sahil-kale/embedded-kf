@@ -16,8 +16,8 @@
   - Real-time signal processing for IoT devices 
   - Navigation systems or state estimation in constrained environments
 
-**Example Workflow**:
-1. Define the system model in JSON.
-2. Generate the C code using the tool.
-3. Integrate the code into the embedded project.
-4. Use the API to update state estimates during runtime.
+## Usage
+1. Define a filter `.json` file. See `generator/tests/samples` for example filters
+2. Run `python3 kf_generator.py {path/to/filter/json} {optional: output directory, default=kf_output}`
+3. Build and link the generated `.c/.h` files into the software application. A CMakeLists.txt file is generated for convinence
+4. Call the filter API (See `info/API.md`)
