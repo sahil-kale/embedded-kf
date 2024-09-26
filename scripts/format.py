@@ -3,7 +3,7 @@ import subprocess
 import sys
 import argparse
 
-EXCLUDE_DIRS = [".vscode", "build", "libs"]
+EXCLUDE_DIRS = [".vscode", "build", "libs", "kf_output"]
 EMBEDDED_EXTENSIONS = (".c", ".h", ".cpp", ".hpp")
 PYTHON_EXTENSION = ".py"
 
@@ -22,8 +22,15 @@ def embedded_fmt(dry_run=False):
                 text=True,
             )
             if result.returncode != 0:
-                print("C/C++ files need formatting!")
+                print("C/C++ files need formatting! Specific issues:")
+                diff_result = subprocess.run(
+                    ["clang-format", "--verbose", *embedded_files],
+                    capture_output=True,
+                    text=True,
+                )
+                print(diff_result.stdout)
                 sys.exit(1)
+
         else:
             subprocess.run(["clang-format", "-i", *embedded_files])
 
@@ -37,10 +44,13 @@ def python_fmt(dry_run=False):
     if python_files:
         if dry_run:
             result = subprocess.run(
-                ["black", "--check", *python_files], capture_output=True, text=True
+                ["black", "--check", "--diff", *python_files],
+                capture_output=True,
+                text=True,
             )
             if result.returncode != 0:
-                print("Python formatter failed!")
+                print("Python formatter failed! Specific issues:")
+                print(result.stdout)  # Output the diff of formatting issues
                 sys.exit(1)
         else:
             subprocess.run(["black", *python_files])

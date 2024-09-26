@@ -120,17 +120,77 @@ class KalmanFilterConfigGenerator:
 
     def generate_function_headers(self):
         # fmt: off
-        headers = [
-            f"{self.error_enum} {self.filter_name}_init(void);",
-            f"{self.error_enum} {self.filter_name}_update({self.generated_structure_names['measurement']}_S * const measurement);",
-        ]
+        headers = {}
+
+        # Generate init function header with Doxygen comment
+        headers["init"] = {
+            "comment": f"""
+            /**
+            * @brief Initializes the {self.filter_name} Kalman Filter.
+            * 
+            * This function sets up the necessary structures and parameters
+            * for the {self.filter_name} Kalman Filter. It must be called once
+            * at system startup before using the predict or update functions.
+            * 
+            * @return {self.error_enum} Error code indicating the success or failure of the initialization.
+            */
+            """,
+            "str": f"{self.error_enum} {self.filter_name}_init(void);"
+        }
+
+        # Generate update function header with Doxygen comment
+        headers["update"] = {
+            "comment": f"""
+            /**
+            * @brief Updates the {self.filter_name} Kalman Filter with a new measurement.
+            * 
+            * This function updates the state and covariance of the Kalman Filter using 
+            * the provided measurement data.
+            * 
+            * @param measurement Pointer to the measurement structure containing the sensor data.
+            * @return {self.error_enum} Error code indicating the success or failure of the update process.
+            */
+            """,
+            "str": f"{self.error_enum} {self.filter_name}_update({self.generated_structure_names['measurement']}_S * const measurement);"
+        }
+
+        # Generate predict function header with Doxygen comment, considering the number of controls
         if self.config.num_controls > 0:
-            headers.append(
-                f"{self.error_enum} {self.filter_name}_predict({self.generated_structure_names['control']}_S * const control);"
-            )
+            headers["predict"] = {
+                "comment": f"""
+                /**
+                * @brief Predicts the next state of the {self.filter_name} Kalman Filter.
+                * 
+                * This function performs the prediction step of the Kalman Filter based on the control input.
+                * 
+                * @param control Pointer to the control structure containing the control input data.
+                * @return {self.error_enum} Error code indicating the success or failure of the prediction process.
+                */
+                """,
+                "str": f"{self.error_enum} {self.filter_name}_predict({self.generated_structure_names['control']}_S * const control);"
+            }
         else:
-            headers.append(f"{self.error_enum} {self.filter_name}_predict(void);")
+            headers["predict"] = {
+                "comment": f"""
+                /**
+                * @brief Predicts the next state of the {self.filter_name} Kalman Filter.
+                * 
+                * This function performs the prediction step of the Kalman Filter. No control input is required.
+                * 
+                * @return {self.error_enum} Error code indicating the success or failure of the prediction process.
+                */
+                """,
+                "str": f"{self.error_enum} {self.filter_name}_predict(void);"
+            }
+
         # fmt: on
+
+        # for every comment, remove all tabbing
+        for header in headers.values():
+            header["comment"] = "\n".join(
+                line.strip() for line in header["comment"].split("\n")
+            )
+
         return headers
 
     def generate_structure_definitions(self):
@@ -300,4 +360,6 @@ class KalmanFilterConfigGenerator:
                 output_file.write("\n".join(struct_definition) + "\n\n")
 
             output_file.write("/* Function Headers */\n")
-            output_file.write("\n".join(self.generated_function_headers) + "\n\n")
+            for header in self.generated_function_headers.values():
+                output_file.write(header["comment"])
+                output_file.write(header["str"] + "\n\n")

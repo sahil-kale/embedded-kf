@@ -248,23 +248,34 @@ def test_function_headers(config_path):
 
         measurement_struct_name = f"{simple_kf_config['name']}_measurement_S"
 
-        expected_function_headers = [
-            f"kf_error_E {simple_kf_config['name']}_init(void);",
-            f"kf_error_E {simple_kf_config['name']}_update({measurement_struct_name} * const measurement);",
-        ]
+        # fmt: off
+
+        # Expected function headers in dictionary form
+        expected_function_headers = {
+            "init": f"kf_error_E {simple_kf_config['name']}_init(void);",
+            "update": f"kf_error_E {simple_kf_config['name']}_update({measurement_struct_name} * const measurement);",
+        }
 
         if config_path == SIMPLE_CONFIG_PATH_WITH_CONTROL:
             control_struct_name = f"{simple_kf_config['name']}_control_S"
-            expected_function_headers.append(
-                f"kf_error_E {simple_kf_config['name']}_predict({control_struct_name} * const control);"
-            )
+            expected_function_headers[
+                "predict"
+            ] = f"kf_error_E {simple_kf_config['name']}_predict({control_struct_name} * const control);"
         else:
-            expected_function_headers.append(
-                f"kf_error_E {simple_kf_config['name']}_predict(void);"
-            )
+            expected_function_headers[
+                "predict"
+            ] = f"kf_error_E {simple_kf_config['name']}_predict(void);"
 
-        for header in expected_function_headers:
-            assert header in generated_config.generated_function_headers
+        # Enhanced assertion with informative error messages
+        for key, expected_header in expected_function_headers.items():
+            assert (
+                key in generated_config.generated_function_headers
+            ), f"Missing function header key: {key}"
+            assert (
+                expected_header
+                == generated_config.generated_function_headers[key]["str"]
+            ), f"Expected header for {key} does not match. Expected: {expected_header}, Got: {generated_config.generated_function_headers[key]['str']}"
+        # fmt: on
 
 
 def assert_function_definition(expected_definition, generated_definitions):
