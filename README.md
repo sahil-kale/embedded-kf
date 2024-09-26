@@ -20,4 +20,7 @@
 1. Define a filter `.json` file. See `generator/tests/samples` for example filters
 2. Run `python3 kf_generator.py {path/to/filter/json} {optional: output directory, default=kf_output}`
 3. Build and link the generated `.c/.h` files into the software application. A CMakeLists.txt file is generated for convinence
-4. Call the filter API (See `info/API.md`)
+4. Call the filter API [(See `info/API.md`)](https://github.com/sahil-kale/embedded-kf/blob/main/info/API.md)
+
+## Theory and References
+[Kalman Filter Theory](https://github.com/sahil-kale/embedded-kf/blob/main/kalman_theory.md)
