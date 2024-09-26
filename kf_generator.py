@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 import shutil
-import sys
+import subprocess
 
 from generator.ingestor import KalmanFilterConfig
 from generator.file_content_generator import KalmanFilterConfigGenerator
@@ -11,7 +11,6 @@ from generator.file_writer import FileWriter
 
 def get_repo_root():
     """Finds the repository root (assuming the script is located within the repo)."""
-    # Assumes the script is called from within the repo, typically near the root
     return os.path.abspath(os.path.dirname(__file__))
 
 
@@ -49,12 +48,24 @@ def main():
 
     repo_root = get_repo_root()  # Get the repository root
 
-    # Check out submodules
-    ret_code = os.system("git submodule update --init --recursive")
-    if ret_code != 0:
-        raise RuntimeError(
-            "Failed to update submodules. Ensure the repository is initialized correctly."
+    try:
+        subprocess.run(
+            ["git", "submodule", "update", "--init", "--recursive"],
+            cwd=repo_root,
+            check=True,
         )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to update submodules: {e}")
+
+    # install the required packages from the requirements.txt file
+    try:
+        subprocess.run(
+            ["pip", "install", "-r", "requirements.txt"],
+            cwd=repo_root,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to install required packages: {e}")
 
     directory_paths = {
         "output_dir": os.path.abspath(args.output_dir),
@@ -75,16 +86,19 @@ def main():
     except json.JSONDecodeError:
         raise ValueError(f"Input file '{args.input_file}' contains invalid JSON.")
 
+    # Process each config
     for config in configs:
         kf_config = KalmanFilterConfig(config)
         generator = KalmanFilterConfigGenerator(kf_config)
-        c_file_name = f'{kf_config.raw_config["name"]}.c'
-        h_file_name = f'{kf_config.raw_config["name"]}.h'
+        c_file_name = f'{kf_config.raw_config["name"]}_config.c'
+        h_file_name = f'{kf_config.raw_config["name"]}_config.h'
 
         c_file_path = os.path.join(directory_paths["src"], c_file_name)
         h_file_path = os.path.join(directory_paths["inc"], h_file_name)
 
+        # Write the generated files using the FileWriter class
         file_writer = FileWriter(generator, c_file_path, h_file_path)
+        file_writer.write_to_file(c_file_path, h_file_path)
 
     # Prepare directories to copy from, resolving relative paths based on repo root
     inc_directories_to_copy = [
