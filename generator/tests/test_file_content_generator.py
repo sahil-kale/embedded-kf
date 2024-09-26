@@ -29,11 +29,12 @@ def load_config(config_path):
     return KalmanFilterConfig(config[0])
 
 
-def format_matrix_with_newlines(matrix: np.ndarray, cols_expr: str) -> str:
+def format_matrix_with_newlines(matrix: np.ndarray) -> str:
     rows, cols = matrix.shape
     matrix_rows = []
     for i in range(rows):
-        row_str = ", ".join(map(str, matrix[i]))
+        # Format each number to 6 decimal places and append 'f' for C float
+        row_str = ", ".join(f"{x:.6f}F" for x in matrix[i])
         matrix_rows.append(row_str)
     return "{\n    " + ",\n    ".join(matrix_rows) + "\n}"
 
@@ -67,7 +68,7 @@ def test_config_matrix(config_path, matrix_name, rows_expr, cols_expr):
     generated_config = KalmanFilterConfigGenerator(config)
 
     matrix = getattr(generated_config.config, matrix_name)
-    matrix_str = format_matrix_with_newlines(matrix, cols_expr)
+    matrix_str = format_matrix_with_newlines(matrix)
 
     expected_matrix_output = generate_expected_matrix_output(
         matrix_name, matrix_str, rows_expr, cols_expr
@@ -249,13 +250,13 @@ def test_function_headers(config_path):
 
         expected_function_headers = [
             f"kf_error_E {simple_kf_config['name']}_init(void);",
-            f"kf_error_E {simple_kf_config['name']}_update({measurement_struct_name} const * const measurement);",
+            f"kf_error_E {simple_kf_config['name']}_update({measurement_struct_name} * const measurement);",
         ]
 
         if config_path == SIMPLE_CONFIG_PATH_WITH_CONTROL:
             control_struct_name = f"{simple_kf_config['name']}_control_S"
             expected_function_headers.append(
-                f"kf_error_E {simple_kf_config['name']}_predict({control_struct_name} const * const control);"
+                f"kf_error_E {simple_kf_config['name']}_predict({control_struct_name} * const control);"
             )
         else:
             expected_function_headers.append(
@@ -301,9 +302,9 @@ def test_measurement_function_definition(config_path):
     data_struct_name = generated_config.generated_structure_names["filter_data"]
 
     measurement_function_definition = [
-        f"kf_error_E {kf_name}_update({kf_name}_measurement_S const * const measurement) {{",
+        f"kf_error_E {kf_name}_update({kf_name}_measurement_S * const measurement) {{",
         f"\tmatrix_t Z = {{SIMPLE_KF_NUM_MEASUREMENTS, 1U, measurement->data}};",
-        f"\treturn kf_update(&{data_struct_name}, &Z, &measurement->valid, SIMPLE_KF_NUM_MEASUREMENTS);",
+        f"\treturn kf_update(&{data_struct_name}, &Z, measurement->valid, SIMPLE_KF_NUM_MEASUREMENTS);",
         "}",
     ]
 
@@ -324,7 +325,7 @@ def test_control_function_definition(config_path):
 
     if config_path == SIMPLE_CONFIG_PATH_WITH_CONTROL:
         control_function_definition = [
-            f"kf_error_E {kf_name}_predict({kf_name}_control_S const * const control) {{",
+            f"kf_error_E {kf_name}_predict({kf_name}_control_S * const control) {{",
             f"\tmatrix_t U = {{SIMPLE_KF_NUM_CONTROLS, 1U, control->data}};",
             f"\treturn kf_predict(&{data_struct_name}, &U);",
             "}",
