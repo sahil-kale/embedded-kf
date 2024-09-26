@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "cholesky.h"
+#include "matrix.h"
 
 static bool is_matrix_square_and_matches_states(const matrix_t* matrix, size_t num_states);
 static kf_error_E validate_matrix_storage(const kf_matrix_storage_S* storage, size_t required_size);

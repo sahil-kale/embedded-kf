@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "matrix.h"
+#include "matrix_types.h"
 
 typedef enum {
     KF_ERROR_NONE = 0,
