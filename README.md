@@ -1,15 +1,15 @@
 ### embedded-kf Library Overview
 
-**embedded-kf** is a lightweight C library designed for implementing Kalman filters on embedded systems. While similar in technical scope to [kalman-clib](https://github.com/sunsided/kalman-clib), it introduces new capabilities while reusing its matrix utility functions. **embedded-kf** offers the following features:
+**embedded-kf** is a lightweight C library designed to implement Kalman filters on embedded systems. While similar in technical scope to [kalman-clib](https://github.com/sunsided/kalman-clib), it introduces new capabilities while reusing its matrix utility functions. **embedded-kf** offers the following features:
 
-- **Fully statically-allocated**: No dynamic memory required, ideal for resource-constrained environments.
-- **Control vector support**: Direct integration of control-vector inputs during prediction steps.
 - **Asynchronous measurement updates**: Supports systems with sensors that provide data at different rates.
-- **Auto code generation**: Generates optimized `.c/.h` files from user-defined JSON configurations with user-friendly APIs.
+- **Automatic C code generation**: Generates optimized `.c/.h` files from user-defined JSON configurations with user-friendly APIs.
+- **Control vector support**: Direct integration of control-vector inputs during prediction steps
+- **Fully statically-allocated**: No dynamic memory is required, which is ideal for resource-constrained environments.
 
 **Key Features:**
 
-- **Memory and CPU Optimized**: Designed for real-time, low-latency operation on embedded systems.
+- **Optimized for Embedded System Use**: Designed for real-time operation on embedded systems, with easy integration and API
 - **Customizable and Extensible**: Easily configurable via JSON, with extensibility to add custom filters or measurement models.
 - **Typical Use Cases**:
   - Sensor fusion for robotics, drones, or autonomous vehicles
