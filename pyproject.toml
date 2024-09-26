@@ -1,0 +1,4 @@
+[tool.black]
+line-length = 88  # You can specify the line length black uses
+target-version = ['py38']  # Specify the Python versions you want to support
+skip-string-normalization = false 

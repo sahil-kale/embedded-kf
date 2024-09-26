@@ -68,7 +68,7 @@ if __name__ == "__main__":
         "clang-tidy",
     ]
 
-    pip_components = ["black", "pytest", "pylint", "numpy"]
+    pip_components = ["black==23.9.1", "pytest", "pylint", "numpy"]
 
     # Execute functions
     update_and_upgrade(skip_upgrade=args.skip_upgrade)
