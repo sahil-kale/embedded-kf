@@ -128,6 +128,8 @@ kf_error_E kf_init(kf_data_S* const kf_data, const kf_config_S* const config);
  * is run at a fixed interval.
  * @warning The kf_data structure must be initialized before calling this function. Null pointer
  * checks and incorrect configurations are not performed for optimization purposes.
+ * @warning This function is not thread-safe. The user must ensure that the predict function and the update function are not
+ * called together
  */
 kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u);
 
@@ -144,6 +146,8 @@ kf_error_E kf_predict(kf_data_S* const kf_data, const matrix_t* const u);
  * measurement_validity is NULL.
  *
  * @return kf_error_E Error code indicating the success of the update
+ * @warning This function is not thread-safe. The user must ensure that the predict function and the update function are not
+ * called together
  */
 kf_error_E kf_update(kf_data_S* const kf_data, const matrix_t* const z, const bool* const measurement_validity,
                      const size_t num_measurements);
