@@ -14,15 +14,13 @@ add_compile_options(-Wall -Wextra -pedantic -Werror)
 set(SRC_DIR src)
 set(INC_DIR inc)
 
-# Use globbing to automatically find all .c and .h files in src and inc directories
 file(GLOB SOURCES "${SRC_DIR}/*.c")
-file(GLOB HEADERS "${INC_DIR}/*.h")
 
 # Add include directories
 include_directories(${INC_DIR})
 
-# Create the shared library
-add_library(kalman_filter SHARED ${SOURCES} ${HEADERS})
+# Create the shared library without the headers
+add_library(kalman_filter SHARED ${SOURCES})
 
 # Add versioning information to the shared library
 set_target_properties(kalman_filter PROPERTIES VERSION ${PROJECT_VERSION})

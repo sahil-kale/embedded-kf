@@ -6,6 +6,7 @@ import sys
 
 from generator.ingestor import KalmanFilterConfig
 from generator.file_content_generator import KalmanFilterConfigGenerator
+from generator.file_writer import FileWriter
 
 
 def get_repo_root():
@@ -77,13 +78,13 @@ def main():
     for config in configs:
         kf_config = KalmanFilterConfig(config)
         generator = KalmanFilterConfigGenerator(kf_config)
-        c_file_name = f'{kf_config.raw_config["name"]}_config.c'
-        h_file_name = f'{kf_config.raw_config["name"]}_config.h'
+        c_file_name = f'{kf_config.raw_config["name"]}.c'
+        h_file_name = f'{kf_config.raw_config["name"]}.h'
 
         c_file_path = os.path.join(directory_paths["src"], c_file_name)
         h_file_path = os.path.join(directory_paths["inc"], h_file_name)
 
-        generator.write_to_file(c_file_path, h_file_path)
+        file_writer = FileWriter(generator, c_file_path, h_file_path)
 
     # Prepare directories to copy from, resolving relative paths based on repo root
     inc_directories_to_copy = [

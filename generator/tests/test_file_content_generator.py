@@ -266,6 +266,21 @@ def test_function_headers(config_path):
                 "predict"
             ] = f"kf_error_E {simple_kf_config['name']}_predict(void);"
 
+        # expect a header to get the state of the filter
+        expected_function_headers[
+            "get_state"
+        ] = f"matrix_data_t {simple_kf_config['name']}_get_state(size_t state);"
+
+        # expect a header to get the covariance of the filter
+        expected_function_headers[
+            "get_covariance"
+        ] = f"matrix_data_t {simple_kf_config['name']}_get_covariance(size_t row, size_t col);"
+
+        # expect a header to get a pointer to the filter data
+        expected_function_headers[
+            "get_data"
+        ] = f"kf_data_S * {simple_kf_config['name']}_get_data(void);"
+
         # Enhanced assertion with informative error messages
         for key, expected_header in expected_function_headers.items():
             assert (
@@ -282,6 +297,61 @@ def assert_function_definition(expected_definition, generated_definitions):
     generated_definitions_str = "\n".join(generated_definitions)
     expected_definition_str = "\n".join(expected_definition)
     assert expected_definition_str in generated_definitions_str
+
+
+def test_get_state_function_definition():
+    config = load_config(SIMPLE_CONFIG_PATH)
+    generated_config = KalmanFilterConfigGenerator(config)
+
+    kf_name = config.raw_config["name"]
+    data_struct_name = generated_config.generated_structure_names["filter_data"]
+
+    get_state_function_definition = [
+        f"matrix_data_t {kf_name}_get_state(size_t state) {{",
+        f"\treturn matrix_get(&{data_struct_name}.X, state, 0U);",
+        "}",
+    ]
+
+    assert_function_definition(
+        get_state_function_definition, generated_config.generated_function_definitions
+    )
+
+
+def test_get_covariance_function_definition():
+    config = load_config(SIMPLE_CONFIG_PATH)
+    generated_config = KalmanFilterConfigGenerator(config)
+
+    kf_name = config.raw_config["name"]
+    data_struct_name = generated_config.generated_structure_names["filter_data"]
+
+    get_covariance_function_definition = [
+        f"matrix_data_t {kf_name}_get_covariance(size_t row, size_t col) {{",
+        f"\treturn matrix_get(&{data_struct_name}.P, row, col);",
+        "}",
+    ]
+
+    assert_function_definition(
+        get_covariance_function_definition,
+        generated_config.generated_function_definitions,
+    )
+
+
+def test_get_data_function_definition():
+    config = load_config(SIMPLE_CONFIG_PATH)
+    generated_config = KalmanFilterConfigGenerator(config)
+
+    kf_name = config.raw_config["name"]
+    data_struct_name = generated_config.generated_structure_names["filter_data"]
+
+    get_data_function_definition = [
+        f"kf_data_S * {kf_name}_get_data(void) {{",
+        f"\treturn &{data_struct_name};",
+        "}",
+    ]
+
+    assert_function_definition(
+        get_data_function_definition, generated_config.generated_function_definitions
+    )
 
 
 @pytest.mark.parametrize("config_path", [SIMPLE_CONFIG_PATH])
