@@ -19,8 +19,13 @@
 ## Usage
 1. Define a filter `.json` file. See `generator/tests/samples` for example filters
 2. Run `python3 kf_generator.py {path/to/filter/json} {optional: output directory, default=kf_output}`
-3. Build and link the generated `.c/.h` files into the software application. A CMakeLists.txt file is generated for convinence
+3. Build and link the generated `.c/.h` files into the software application. A CMakeLists.txt file is generated for convenience
 4. Call the filter API [(See `info/API.md`)](https://github.com/sahil-kale/embedded-kf/blob/main/info/API.md)
 
 ## Theory and References
 [Kalman Filter Theory](https://github.com/sahil-kale/embedded-kf/blob/main/kalman_theory.md)
+
+## Example Smoothing
+From an IMU filtering example, the figure below shows the plot of pitch as estimated from raw accelerometer movements and the Kalman filter state estimate
+![image](https://github.com/user-attachments/assets/4212b4bf-38c7-4e93-a36e-f3c80fe78a74)
+
