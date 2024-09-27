@@ -1,7 +1,8 @@
 # Kalman Filter Theory
-The Kalman Filter is a filter designed to provide an optimal state estimate for a linear dynamical system where the entering noise is uncorrelated and distributed in a gaussian manner (i.e. normally distributed).
 
-The filter is based on Bayes Theorem, which provides a mathametical rule to determine the probability of a cause given its effect. 
+The Kalman Filter is a filter designed to provide an optimal state estimate for a linear dynamical system where the entering noise is uncorrelated and distributed in a Gaussian manner (i.e. normally distributed).
+
+The filter is based on **Bayes Theorem**, which provides a mathematical rule to determine the probability of a cause given its effect.
 
 ## Intuition
 
@@ -18,8 +19,7 @@ This mirrors **Bayesian updating** and the **Kalman Filter** process:
 
 ## Filter Math
 
-Below is a definition of each matrix and its size (where **n** is the number of states, **m** is the number of measurements, and **c** is the number of control inputs). The equations are taken from [Kalman Filter - Wikipedia](https://en.wikipedia.org/wiki/Kalman_filter)
-
+Below is a definition of each matrix and its size (where **n** is the number of states, **m** is the number of measurements, and **c** is the number of control inputs). The equations are taken from [Kalman Filter - Wikipedia](https://en.wikipedia.org/wiki/Kalman_filter).
 
 - **State Estimate Vector** ($\hat{x}_k$):  
   A vector of size **n x 1** that represents the estimated state of the system at time step **k**.
@@ -51,40 +51,58 @@ Below is a definition of each matrix and its size (where **n** is the number of 
 - **Kalman Gain** ($K_k$):  
   A matrix of size **n x m** that determines how much the estimate should be adjusted based on the new measurements.
 
-#### Predict
+---
+
+### Predict
 
 **Predicted (a priori) state estimate**
 
-$$ \hat{x}_{k|k-1} = F_k \hat{x}_{k-1|k-1} + B_k u_k $$
+\[
+\hat{x}_{k|k-1} = F_k \hat{x}_{k-1|k-1} + B_k u_k
+\]
 
 **Predicted (a priori) estimate covariance**
 
-$$ P_{k|k-1} = F_k P_{k-1|k-1} F_k^\top + Q_k $$
+\[
+P_{k|k-1} = F_k P_{k-1|k-1} F_k^\top + Q_k
+\]
 
 ---
 
-#### Update
+### Update
 
 **Innovation or measurement pre-fit residual**
 
-$$ \tilde{y}_k = z_k - H_k \hat{x}_{k|k-1} $$
+\[
+\tilde{y}_k = z_k - H_k \hat{x}_{k|k-1}
+\]
 
 **Innovation (or pre-fit residual) covariance**
 
-$$ S_k = H_k P_{k|k-1} H_k^\top + R_k $$
+\[
+S_k = H_k P_{k|k-1} H_k^\top + R_k
+\]
 
 **Optimal Kalman gain**
 
-$$ K_k = P_{k|k-1} H_k^\top S_k^{-1} $$
+\[
+K_k = P_{k|k-1} H_k^\top S_k^{-1}
+\]
 
 **Updated (a posteriori) state estimate**
 
-$$ \hat{x}_{k|k} = \hat{x}_{k|k-1} + K_k \tilde{y}_k $$
+\[
+\hat{x}_{k|k} = \hat{x}_{k|k-1} + K_k \tilde{y}_k
+\]
 
 **Updated (a posteriori) estimate covariance**
 
-$$ P_{k|k} = (I - K_k H_k) P_{k|k-1} $$
+\[
+P_{k|k} = (I - K_k H_k) P_{k|k-1}
+\]
 
 **Measurement post-fit residual**
 
-$$ \tilde{y}_{k|k} = z_k - H_k \hat{x}_{k|k} $$
+\[
+\tilde{y}_{k|k} = z_k - H_k \hat{x}_{k|k}
+\]
