@@ -74,7 +74,31 @@ class KalmanFilterConfigGenerator:
             predict_function = self.generate_predict_function(with_control=False)
         generated_function_definitions.append(predict_function)
 
+        generated_function_definitions.append(self.generate_state_getter_function())
+        generated_function_definitions.append(
+            self.generate_covariance_getter_function()
+        )
+        generated_function_definitions.append(self.generate_get_data_function())
+
         return generated_function_definitions
+
+    def generate_state_getter_function(self):
+        return (
+            f"matrix_data_t {self.filter_name}_get_state(size_t state) {{\n"
+            f"\treturn matrix_get(&{self.generated_structure_names['filter_data']}.X, state, 0U);\n}}"
+        )
+
+    def generate_covariance_getter_function(self):
+        return (
+            f"matrix_data_t {self.filter_name}_get_covariance(size_t row, size_t col) {{\n"
+            f"\treturn matrix_get(&{self.generated_structure_names['filter_data']}.P, row, col);\n}}"
+        )
+
+    def generate_get_data_function(self):
+        return (
+            f"kf_data_S * {self.filter_name}_get_data(void) {{\n"
+            f"\treturn &{self.generated_structure_names['filter_data']};\n}}"
+        )
 
     def generate_init_function(self):
         return (
@@ -182,6 +206,41 @@ class KalmanFilterConfigGenerator:
                 """,
                 "str": f"{self.error_enum} {self.filter_name}_predict(void);"
             }
+
+        headers["get_state"] = {
+            "comment": f"""
+            /**
+            * @brief Retrieves the desired state from the state vector within the {self.filter_name} Kalman Filter.
+            *
+            * @return matrix_data_t The desired state value.
+            */
+            """,
+            "str": f"matrix_data_t {self.filter_name}_get_state(size_t state);"
+        }
+
+        headers["get_covariance"] = {
+            "comment": f"""
+            /**
+            * @brief Retrieves the desired covariance value from the covariance matrix within the {self.filter_name} Kalman Filter.
+            *
+            * @return matrix_data_t The desired covariance value.
+            */
+            """,
+            "str": f"matrix_data_t {self.filter_name}_get_covariance(size_t row, size_t col);"
+        }
+
+        headers["get_data"] = {
+            "comment": f"""
+            /**
+            * @brief Returns a pointer to the data struct of the {self.filter_name} Kalman Filter.
+            *
+            * @warning Storing the pointer to the data struct is not recommended as it may be modified by the filter. Use with caution
+            *
+            * @return kf_data_S* Pointer to the data struct of the {self.filter_name} Kalman Filter.
+            */
+            """,
+            "str": f"kf_data_S * {self.filter_name}_get_data(void);"
+        }
 
         # fmt: on
 
@@ -336,7 +395,9 @@ class KalmanFilterConfigGenerator:
 
     def write_to_file(self, c_output_file_path: str, h_output_file_path: str):
         with open(c_output_file_path, "w") as output_file:
-            output_file.write('#include "kalman.h"\n\n')
+            output_file.write('#include "kalman.h"\n')
+            output_file.write("#define EXTERN_INLINE_MATRIX STATIC_INLINE\n\n")
+            output_file.write('#include "matrix.h"\n\n')
             header_file_name = h_output_file_path.split("/")[-1]
             output_file.write(f'#include "{header_file_name}"\n\n')
             output_file.write(self.generated_filter_static_data_struct + "\n\n")

@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "kalman.h": "c"
+        "kalman.h": "c",
+        "imu_kf.h": "c",
+        "matrix.h": "c",
+        "compiler.h": "c"
     }
 }
