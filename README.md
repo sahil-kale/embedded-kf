@@ -22,6 +22,8 @@
 3. Build and link the generated `.c/.h` files into the software application. A CMakeLists.txt file is generated for convenience
 4. Call the filter API - see [`info/API.md`](https://github.com/sahil-kale/embedded-kf/blob/main/info/API.md)
 
+Documentation about the core library functions are available [here](https://sahil-kale.github.io/embedded-kf/).
+
 ## Theory and References
 [Kalman Filter Theory](https://github.com/sahil-kale/embedded-kf/blob/main/kalman_theory.md)
 
